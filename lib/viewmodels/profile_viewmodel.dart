@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../models/perfil_musico.dart';
-import '../models/instrumento.dart'; // NOVO IMPORT
+import '../models/instrumento.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
@@ -25,6 +25,19 @@ class ProfileViewModel extends ChangeNotifier {
 
   List<Map<String, dynamic>> _todosGeneros = [];
   List<Map<String, dynamic>> get todosGeneros => _todosGeneros;
+
+  // --- NOVAS VARIÁVEIS PARA OBJETIVOS ---
+  List<String> _objetivosSelecionados = [];
+  List<String> get objetivosSelecionados => _objetivosSelecionados;
+
+  final List<String> todosObjetivos = [
+    'Hobby e Diversão',
+    'Banda Cover / Tributo',
+    'Trabalho Profissional',
+    'Somente Gravação',
+    'Composição Original'
+  ];
+  // ----------------------------------------
 
   bool _isFetching = true;
   bool get isFetching => _isFetching;
@@ -48,7 +61,17 @@ class ProfileViewModel extends ChangeNotifier {
     await carregarPerfil();
   }
 
-  // Carrega a lista de todos os instrumentos que cadastramos no SQL
+  // --- NOVO MÉTODO PARA ALTERNAR OBJETIVOS ---
+  void alternarObjetivo(String objetivo) {
+    if (_objetivosSelecionados.contains(objetivo)) {
+      _objetivosSelecionados.remove(objetivo);
+    } else {
+      _objetivosSelecionados.add(objetivo);
+    }
+    notifyListeners();
+  }
+  // ------------------------------------------
+
   Future<void> carregarInstrumentosDisponiveis() async {
     try {
       final data = await _supabase
@@ -81,6 +104,15 @@ class ProfileViewModel extends ChangeNotifier {
       if (data != null) {
         _perfil = PerfilMusico.fromJson(data);
 
+        // --- TRANSFORMAÇÃO DO TEXTO DO BANCO EM LISTA DE OBJETIVOS ---
+        final objTexto = data['perfil_objetivo'] ?? '';
+        if (objTexto.isNotEmpty) {
+          _objetivosSelecionados = objTexto.split(', ');
+        } else {
+          _objetivosSelecionados = [];
+        }
+        // -----------------------------------------------------------
+
         if (_perfil!.perfilCidade != null &&
             _perfil!.perfilCidade!.isNotEmpty) {
           _cidadeEstado = _perfil!.perfilCidade;
@@ -89,7 +121,6 @@ class ProfileViewModel extends ChangeNotifier {
           await buscarCep(_perfil!.perfilCep!);
         }
 
-        // Busca os instrumentos que o usuário toca (fazendo JOIN com a tabela de instrumentos)
         await carregarMeusInstrumentos(user.id);
         await carregarDadosExtras();
       }
@@ -133,7 +164,7 @@ class ProfileViewModel extends ChangeNotifier {
       );
 
       await _supabase.from('musico_instrumentos').upsert(novoVinculo.toJson());
-      await carregarMeusInstrumentos(userId); // Recarrega a lista
+      await carregarMeusInstrumentos(userId); 
       return true;
     } catch (e) {
       _errorMessage =
@@ -156,7 +187,7 @@ class ProfileViewModel extends ChangeNotifier {
           .eq('musico_id', userId)
           .eq('instrumento_id', instrumentoId);
 
-      await carregarMeusInstrumentos(userId); // Recarrega a lista
+      await carregarMeusInstrumentos(userId); 
       return true;
     } catch (e) {
       return false;
@@ -169,7 +200,11 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _supabase.from('perfis_musicos').upsert(perfilAtualizado.toJson());
+      // --- TRANSFORMA A LISTA DE VOLTA EM TEXTO PARA SALVAR ---
+      final jsonParaSalvar = perfilAtualizado.toJson();
+      jsonParaSalvar['perfil_objetivo'] = _objetivosSelecionados.join(', ');
+
+      await _supabase.from('perfis_musicos').upsert(jsonParaSalvar);
       _perfil = perfilAtualizado;
       return true;
     } catch (e) {
@@ -212,15 +247,14 @@ class ProfileViewModel extends ChangeNotifier {
     _meusInstrumentos = [];
     _cidadeEstado = null;
     _errorMessage = null;
+    _objetivosSelecionados = []; // --- LIMPA A LISTA AO SAIR ---
     notifyListeners();
   }
 
   Future<void> fazerLogout() async {
-    limparDados(); // Limpa o estado da memória antes de sair
+    limparDados(); 
     await _supabase.auth.signOut();
   }
-
-  // disponiblidade semanal e gêneros musicais
 
   final List<String> _diasSemana = [
     'Segunda',
@@ -236,20 +270,17 @@ class ProfileViewModel extends ChangeNotifier {
   List<String> get diasSemana => _diasSemana;
   List<String> get turnos => _turnos;
 
-  // --- NOVOS MÉTODOS ---
   Future<void> carregarDadosExtras() async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
 
     try {
-      // Carrega Gêneros
       final generosData = await _supabase
           .from('musico_generos')
           .select('genero_id, is_prioritario, generos_musicais(genero_nome)')
           .eq('perfil_id', userId);
       _meusGeneros = List<Map<String, dynamic>>.from(generosData);
 
-      // Carrega Disponibilidade
       final dispData = await _supabase
           .from('disponibilidade_semanal')
           .select()

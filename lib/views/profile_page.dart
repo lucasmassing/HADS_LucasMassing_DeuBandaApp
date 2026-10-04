@@ -19,7 +19,6 @@ class _ProfilePageState extends State<ProfilePage> {
   final _nomeController = TextEditingController();
   final _bioController = TextEditingController();
   final _cepController = TextEditingController();
-  final _objetivoController = TextEditingController();
   final _referenciaController = TextEditingController();
 
   @override
@@ -31,7 +30,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _nomeController.text = viewModel.perfil!.perfilNome;
         _bioController.text = viewModel.perfil!.perfilBio ?? '';
         _cepController.text = viewModel.perfil!.perfilCep ?? '';
-        _objetivoController.text = viewModel.perfil!.perfilObjetivo ?? '';
         _referenciaController.text =
             viewModel.perfil!.perfilArtistaReferencia ?? '';
       }
@@ -53,7 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
       perfilCep: _cepController.text.trim(),
       perfilCoordenadas: null,
       perfilCidade: viewModel.cidadeEstado,
-      perfilObjetivo: _objetivoController.text.trim(),
+      perfilObjetivo: viewModel.objetivosSelecionados.join(', '),
       perfilArtistaReferencia: _referenciaController.text.trim(),
     );
 
@@ -92,7 +90,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Modal para adicionar um novo instrumento
   void _mostrarModalAdicionarInstrumento(
     BuildContext context,
     ProfileViewModel viewModel,
@@ -161,7 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (instrumentoSelecionado != null) {
-                          Navigator.pop(context); // Fecha o modal
+                          Navigator.pop(context);
                           final sucesso = await viewModel.adicionarInstrumento(
                             instrumentoSelecionado!,
                             nivelSelecionado,
@@ -311,6 +308,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Form(
                   key: _formKey,
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       TextFormField(
                         controller: _nomeController,
@@ -360,16 +358,35 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _objetivoController,
-                        decoration: const InputDecoration(
-                          labelText: 'Objetivo',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.track_changes),
+                      
+                      const Text(
+                        'Objetivos na Música',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        maxLength: 30,
+                        child: Column(
+                          children: viewModel.todosObjetivos.map((objetivo) {
+                            final isSelected = viewModel.objetivosSelecionados.contains(objetivo);
+                            return CheckboxListTile(
+                              title: Text(objetivo),
+                              value: isSelected,
+                              activeColor: Colors.deepPurple,
+                              controlAffinity: ListTileControlAffinity.leading, 
+                              dense: true, 
+                              onChanged: (bool? selected) {
+                                viewModel.alternarObjetivo(objetivo);
+                              },
+                            );
+                          }).toList(),
+                        ),
                       ),
                       const SizedBox(height: 16),
+
                       TextFormField(
                         controller: _referenciaController,
                         maxLines: 2,
@@ -408,7 +425,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Divider(thickness: 2),
                 ),
 
-                // SEÇÃO DE INSTRUMENTOS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -472,7 +488,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Divider(thickness: 2),
                 ),
 
-                // SEÇÃO DE GÊNEROS MUSICAIS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -507,7 +522,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     itemCount: viewModel.meusGeneros.length,
                     itemBuilder: (context, index) {
                       final item = viewModel.meusGeneros[index];
-                      // Pega o nome do gênero dentro do objeto populado pelo JOIN
                       final nomeGenero =
                           item['generos_musicais']?['genero_nome'] ??
                           'Desconhecido';
@@ -568,7 +582,6 @@ class _ProfilePageState extends State<ProfilePage> {
         Table(
           border: TableBorder.all(color: Colors.grey.shade300),
           children: [
-            // Cabeçalho dos turnos
             TableRow(
               decoration: BoxDecoration(color: Colors.deepPurple.shade50),
               children: [
@@ -591,7 +604,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ],
             ),
-            // Linhas dos dias da semana
             ...viewModel.diasSemana.map((dia) {
               return TableRow(
                 children: [
