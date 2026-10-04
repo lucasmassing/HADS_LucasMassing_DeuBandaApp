@@ -19,7 +19,9 @@ class FeedPage extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const PedidosConexaoPage()),
+                MaterialPageRoute(
+                  builder: (context) => const PedidosConexaoPage(),
+                ),
               );
             },
           ),
@@ -40,6 +42,18 @@ class FeedPage extends StatelessWidget {
                 final musico = viewModel.musicosFeed[index];
                 final instrumentosMap =
                     musico['musico_instrumentos'] as List<dynamic>? ?? [];
+
+                // Resgata o score calculado no ViewModel
+                final matchScore = musico['match_score'] ?? 0;
+
+                // Define a cor baseada na percentagem
+                Color corMatch;
+                if (matchScore >= 70)
+                  corMatch = Colors.green;
+                else if (matchScore >= 40)
+                  corMatch = Colors.orange;
+                else
+                  corMatch = Colors.grey;
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -82,6 +96,35 @@ class FeedPage extends StatelessWidget {
                                         color: Colors.grey,
                                       ),
                                     ),
+                                ],
+                              ),
+                            ),
+                            // Indicador de Afinidade (Match Score)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: corMatch.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: corMatch),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.local_fire_department,
+                                    color: corMatch,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '$matchScore%',
+                                    style: TextStyle(
+                                      color: corMatch,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
