@@ -358,10 +358,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         ),
                       const SizedBox(height: 16),
-                      
+
                       const Text(
                         'Objetivos na Música',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -371,13 +374,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: Column(
                           children: viewModel.todosObjetivos.map((objetivo) {
-                            final isSelected = viewModel.objetivosSelecionados.contains(objetivo);
+                            final isSelected = viewModel.objetivosSelecionados
+                                .contains(objetivo);
                             return CheckboxListTile(
                               title: Text(objetivo),
                               value: isSelected,
                               activeColor: Colors.deepPurple,
-                              controlAffinity: ListTileControlAffinity.leading, 
-                              dense: true, 
+                              controlAffinity: ListTileControlAffinity.leading,
+                              dense: true,
                               onChanged: (bool? selected) {
                                 viewModel.alternarObjetivo(objetivo);
                               },
@@ -387,15 +391,114 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       const SizedBox(height: 16),
 
-                      TextFormField(
-                        controller: _referenciaController,
-                        maxLines: 2,
-                        decoration: const InputDecoration(
-                          labelText: 'Artistas de Referência',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.star),
-                        ),
+                      // CAMPO DE BUSCA COM AUTOCOMPLETE DO ITUNES (COM FOTOS)
+                      Autocomplete<Map<String, String>>(
+                        displayStringForOption: (option) =>
+                            option['name'] ?? '',
+                        optionsBuilder:
+                            (TextEditingValue textEditingValue) async {
+                              if (textEditingValue.text.length < 3) {
+                                return const Iterable<
+                                  Map<String, String>
+                                >.empty();
+                              }
+                              return await viewModel.buscarArtistasNoiTunes(
+                                textEditingValue.text,
+                              );
+                            },
+                        onSelected: (Map<String, String> selection) {
+                          _referenciaController.text = selection['name'] ?? '';
+                        },
+                        fieldViewBuilder:
+                            (
+                              context,
+                              fieldTextEditingController,
+                              fieldFocusNode,
+                              onFieldSubmitted,
+                            ) {
+                              if (fieldTextEditingController.text.isEmpty &&
+                                  _referenciaController.text.isNotEmpty) {
+                                fieldTextEditingController.text =
+                                    _referenciaController.text;
+                              }
+
+                              return TextFormField(
+                                controller: fieldTextEditingController,
+                                focusNode: fieldFocusNode,
+                                decoration: const InputDecoration(
+                                  labelText: 'Artista de Referência principal',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.star),
+                                  hintText: 'Digite o nome da banda...',
+                                ),
+                                onChanged: (val) {
+                                  _referenciaController.text = val;
+                                },
+                              );
+                            },
+                        optionsViewBuilder: (context, onSelected, options) {
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: Material(
+                              elevation: 6.0,
+                              borderRadius: BorderRadius.circular(8),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxHeight: 250,
+                                  maxWidth: 300,
+                                ),
+                                child: ListView.builder(
+                                  padding: EdgeInsets.zero,
+                                  shrinkWrap: true,
+                                  itemCount: options.length,
+                                  itemBuilder: (BuildContext context, int index) {
+                                    final option = options.elementAt(index);
+                                    final imageUrl = option['image'] ?? '';
+                                    final name = option['name'] ?? '';
+
+                                    return ListTile(
+                                      leading: imageUrl.isNotEmpty
+                                          ? ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              child: Image.network(
+                                                imageUrl,
+                                                width: 40,
+                                                height: 40,
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) => const Icon(
+                                                      Icons.music_note,
+                                                      color: Colors.deepPurple,
+                                                    ),
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.music_note,
+                                              color: Colors.deepPurple,
+                                            ),
+                                      title: Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        onSelected(option);
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
+
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,

@@ -35,7 +35,7 @@ class ProfileViewModel extends ChangeNotifier {
     'Banda Cover / Tributo',
     'Trabalho Profissional',
     'Somente Gravação',
-    'Composição Original'
+    'Composição Original',
   ];
   // ----------------------------------------
 
@@ -164,7 +164,7 @@ class ProfileViewModel extends ChangeNotifier {
       );
 
       await _supabase.from('musico_instrumentos').upsert(novoVinculo.toJson());
-      await carregarMeusInstrumentos(userId); 
+      await carregarMeusInstrumentos(userId);
       return true;
     } catch (e) {
       _errorMessage =
@@ -187,7 +187,7 @@ class ProfileViewModel extends ChangeNotifier {
           .eq('musico_id', userId)
           .eq('instrumento_id', instrumentoId);
 
-      await carregarMeusInstrumentos(userId); 
+      await carregarMeusInstrumentos(userId);
       return true;
     } catch (e) {
       return false;
@@ -252,7 +252,7 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   Future<void> fazerLogout() async {
-    limparDados(); 
+    limparDados();
     await _supabase.auth.signOut();
   }
 
@@ -366,5 +366,48 @@ class ProfileViewModel extends ChangeNotifier {
     } catch (e) {
       return false;
     }
+  }
+
+  // --- BUSCA DE ARTISTAS NA API DO ITUNES COM FOTO (CORRIGIDO) ---
+  Future<List<Map<String, String>>> buscarArtistasNoiTunes(String query) async {
+    if (query.trim().length < 3) return [];
+
+    try {
+      // entity=album (para ter a foto) e attribute=artistTerm (obrigatório bater com o nome da banda)
+      final url = Uri.parse(
+        'https://itunes.apple.com/search?term=$query&entity=album&attribute=artistTerm&limit=15',
+      );
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final results = data['results'] as List;
+
+        final Map<String, Map<String, String>> artistasUnicos = {};
+
+        for (var r in results) {
+          final artistName = r['artistName']?.toString() ?? '';
+          final artworkUrl = r['artworkUrl100']?.toString() ?? '';
+
+          // Confirma dupla para evitar qualquer lixo da API
+          if (artistName.isNotEmpty &&
+              artistName.toLowerCase().contains(query.toLowerCase()) &&
+              !artistasUnicos.containsKey(artistName)) {
+            artistasUnicos[artistName] = {
+              'name': artistName,
+              'image': artworkUrl,
+            };
+          }
+
+          if (artistasUnicos.length >= 5) break;
+        }
+
+        return artistasUnicos.values.toList();
+      }
+    } catch (e) {
+      debugPrint('Erro ao buscar artista com foto: $e');
+    }
+    return [];
   }
 }
