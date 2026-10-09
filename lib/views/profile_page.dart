@@ -30,8 +30,6 @@ class _ProfilePageState extends State<ProfilePage> {
         _nomeController.text = viewModel.perfil!.perfilNome;
         _bioController.text = viewModel.perfil!.perfilBio ?? '';
         _cepController.text = viewModel.perfil!.perfilCep ?? '';
-        _referenciaController.text =
-            viewModel.perfil!.perfilArtistaReferencia ?? '';
       }
     });
   }
@@ -52,7 +50,8 @@ class _ProfilePageState extends State<ProfilePage> {
       perfilCoordenadas: null,
       perfilCidade: viewModel.cidadeEstado,
       perfilObjetivo: viewModel.objetivosSelecionados.join(', '),
-      perfilArtistaReferencia: _referenciaController.text.trim(),
+      perfilArtistaReferencia:
+          null, // Deixamos nulo aqui pois o salvamento é automático no model
     );
 
     final sucesso = await viewModel.salvarPerfil(perfil);
@@ -382,123 +381,12 @@ class _ProfilePageState extends State<ProfilePage> {
                               activeColor: Colors.deepPurple,
                               controlAffinity: ListTileControlAffinity.leading,
                               dense: true,
-                              onChanged: (bool? selected) {
-                                viewModel.alternarObjetivo(objetivo);
-                              },
+                              onChanged: (bool? selected) =>
+                                  viewModel.alternarObjetivo(objetivo),
                             );
                           }).toList(),
                         ),
                       ),
-                      const SizedBox(height: 16),
-
-                      // CAMPO DE BUSCA COM AUTOCOMPLETE DO ITUNES (COM FOTOS)
-                      Autocomplete<Map<String, String>>(
-                        displayStringForOption: (option) =>
-                            option['name'] ?? '',
-                        optionsBuilder:
-                            (TextEditingValue textEditingValue) async {
-                              if (textEditingValue.text.length < 3) {
-                                return const Iterable<
-                                  Map<String, String>
-                                >.empty();
-                              }
-                              return await viewModel.buscarArtistasNoiTunes(
-                                textEditingValue.text,
-                              );
-                            },
-                        onSelected: (Map<String, String> selection) {
-                          _referenciaController.text = selection['name'] ?? '';
-                        },
-                        fieldViewBuilder:
-                            (
-                              context,
-                              fieldTextEditingController,
-                              fieldFocusNode,
-                              onFieldSubmitted,
-                            ) {
-                              if (fieldTextEditingController.text.isEmpty &&
-                                  _referenciaController.text.isNotEmpty) {
-                                fieldTextEditingController.text =
-                                    _referenciaController.text;
-                              }
-
-                              return TextFormField(
-                                controller: fieldTextEditingController,
-                                focusNode: fieldFocusNode,
-                                decoration: const InputDecoration(
-                                  labelText: 'Artista de Referência principal',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.star),
-                                  hintText: 'Digite o nome da banda...',
-                                ),
-                                onChanged: (val) {
-                                  _referenciaController.text = val;
-                                },
-                              );
-                            },
-                        optionsViewBuilder: (context, onSelected, options) {
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: Material(
-                              elevation: 6.0,
-                              borderRadius: BorderRadius.circular(8),
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxHeight: 250,
-                                  maxWidth: 300,
-                                ),
-                                child: ListView.builder(
-                                  padding: EdgeInsets.zero,
-                                  shrinkWrap: true,
-                                  itemCount: options.length,
-                                  itemBuilder: (BuildContext context, int index) {
-                                    final option = options.elementAt(index);
-                                    final imageUrl = option['image'] ?? '';
-                                    final name = option['name'] ?? '';
-
-                                    return ListTile(
-                                      leading: imageUrl.isNotEmpty
-                                          ? ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                              child: Image.network(
-                                                imageUrl,
-                                                width: 40,
-                                                height: 40,
-                                                fit: BoxFit.cover,
-                                                errorBuilder:
-                                                    (
-                                                      context,
-                                                      error,
-                                                      stackTrace,
-                                                    ) => const Icon(
-                                                      Icons.music_note,
-                                                      color: Colors.deepPurple,
-                                                    ),
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.music_note,
-                                              color: Colors.deepPurple,
-                                            ),
-                                      title: Text(
-                                        name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        onSelected(option);
-                                      },
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -528,6 +416,194 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Divider(thickness: 2),
                 ),
 
+                // --- SEÇÃO SEPARADA: ARTISTAS E REFERÊNCIAS ---
+                const Text(
+                  'Artistas de Referência (Máx. 5)',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+
+                if (viewModel.artistasSelecionados.isEmpty)
+                  const Text(
+                    'Nenhuma referência adicionada.',
+                    style: TextStyle(color: Colors.grey),
+                  )
+                else
+                  SizedBox(
+                    height: 110,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: viewModel.artistasSelecionados.length,
+                      itemBuilder: (context, index) {
+                        final artista = viewModel.artistasSelecionados[index];
+                        final image = artista['image'] ?? '';
+                        final name = artista['name'] ?? '';
+
+                        return Container(
+                          width: 80,
+                          margin: const EdgeInsets.only(right: 16),
+                          child: Column(
+                            children: [
+                              Stack(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(40),
+                                    child: image.isNotEmpty
+                                        ? Image.network(
+                                            image,
+                                            width: 70,
+                                            height: 70,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                _iconeFallback(),
+                                          )
+                                        : _iconeFallback(),
+                                  ),
+                                  Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: InkWell(
+                                      onTap: () =>
+                                          viewModel.removerArtista(name),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close,
+                                          size: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                name,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                const SizedBox(height: 16),
+
+                if (viewModel.artistasSelecionados.length < 5)
+                  Autocomplete<Map<String, String>>(
+                    displayStringForOption: (option) => option['name'] ?? '',
+                    optionsBuilder: (TextEditingValue textEditingValue) async {
+                      if (textEditingValue.text.length < 3)
+                        return const Iterable<Map<String, String>>.empty();
+                      return await viewModel.buscarArtistasNoiTunes(
+                        textEditingValue.text,
+                      );
+                    },
+                    onSelected: (Map<String, String> selection) {
+                      viewModel.adicionarArtista(selection);
+                      _referenciaController.clear();
+                    },
+                    fieldViewBuilder:
+                        (
+                          context,
+                          fieldTextEditingController,
+                          fieldFocusNode,
+                          onFieldSubmitted,
+                        ) {
+                          if (fieldTextEditingController.text !=
+                              _referenciaController.text) {
+                            fieldTextEditingController.text =
+                                _referenciaController.text;
+                          }
+                          return TextFormField(
+                            controller: fieldTextEditingController,
+                            focusNode: fieldFocusNode,
+                            decoration: const InputDecoration(
+                              labelText: 'Buscar banda/artista...',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.search),
+                            ),
+                            onChanged: (val) =>
+                                _referenciaController.text = val,
+                          );
+                        },
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 6.0,
+                          borderRadius: BorderRadius.circular(8),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxHeight: 250,
+                              maxWidth: 300,
+                            ),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final option = options.elementAt(index);
+                                final imageUrl = option['image'] ?? '';
+                                final name = option['name'] ?? '';
+
+                                return ListTile(
+                                  leading: imageUrl.isNotEmpty
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          child: Image.network(
+                                            imageUrl,
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    const Icon(
+                                                      Icons.music_note,
+                                                      color: Colors.deepPurple,
+                                                    ),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.music_note,
+                                          color: Colors.deepPurple,
+                                        ),
+                                  title: Text(
+                                    name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  onTap: () => onSelected(option),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24.0),
+                  child: Divider(thickness: 2),
+                ),
+
+                // --- INSTRUMENTOS E GÊNEROS ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -665,6 +741,15 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _iconeFallback() {
+    return Container(
+      width: 70,
+      height: 70,
+      color: Colors.deepPurple.shade50,
+      child: const Icon(Icons.music_note, color: Colors.deepPurple, size: 30),
     );
   }
 

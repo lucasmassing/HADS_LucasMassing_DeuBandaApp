@@ -26,9 +26,12 @@ class ProfileViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> _todosGeneros = [];
   List<Map<String, dynamic>> get todosGeneros => _todosGeneros;
 
-  // --- NOVAS VARIÁVEIS PARA OBJETIVOS ---
   List<String> _objetivosSelecionados = [];
   List<String> get objetivosSelecionados => _objetivosSelecionados;
+
+  // --- NOVA ESTRUTURA PARA ARTISTAS COM FOTO ---
+  List<Map<String, String>> _artistasSelecionados = [];
+  List<Map<String, String>> get artistasSelecionados => _artistasSelecionados;
 
   final List<String> todosObjetivos = [
     'Hobby e Diversão',
@@ -37,7 +40,6 @@ class ProfileViewModel extends ChangeNotifier {
     'Somente Gravação',
     'Composição Original',
   ];
-  // ----------------------------------------
 
   bool _isFetching = true;
   bool get isFetching => _isFetching;
@@ -61,7 +63,6 @@ class ProfileViewModel extends ChangeNotifier {
     await carregarPerfil();
   }
 
-  // --- NOVO MÉTODO PARA ALTERNAR OBJETIVOS ---
   void alternarObjetivo(String objetivo) {
     if (_objetivosSelecionados.contains(objetivo)) {
       _objetivosSelecionados.remove(objetivo);
@@ -70,7 +71,37 @@ class ProfileViewModel extends ChangeNotifier {
     }
     notifyListeners();
   }
-  // ------------------------------------------
+
+  // --- SALVAMENTO AUTOMÁTICO DE REFERÊNCIAS ---
+  Future<void> _salvarReferenciasNoBanco() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final jsonString = json.encode(_artistasSelecionados);
+    try {
+      await _supabase
+          .from('perfis_musicos')
+          .update({'perfil_artista_referencia': jsonString})
+          .eq('perfil_id', userId);
+    } catch (e) {
+      debugPrint('Erro ao salvar referência: $e');
+    }
+  }
+
+  void adicionarArtista(Map<String, String> artista) async {
+    if (_artistasSelecionados.length < 5 &&
+        !_artistasSelecionados.any((a) => a['name'] == artista['name'])) {
+      _artistasSelecionados.add(artista);
+      notifyListeners();
+      await _salvarReferenciasNoBanco();
+    }
+  }
+
+  void removerArtista(String nomeArtista) async {
+    _artistasSelecionados.removeWhere((a) => a['name'] == nomeArtista);
+    notifyListeners();
+    await _salvarReferenciasNoBanco();
+  }
 
   Future<void> carregarInstrumentosDisponiveis() async {
     try {
@@ -104,14 +135,30 @@ class ProfileViewModel extends ChangeNotifier {
       if (data != null) {
         _perfil = PerfilMusico.fromJson(data);
 
-        // --- TRANSFORMAÇÃO DO TEXTO DO BANCO EM LISTA DE OBJETIVOS ---
         final objTexto = data['perfil_objetivo'] ?? '';
         if (objTexto.isNotEmpty) {
           _objetivosSelecionados = objTexto.split(', ');
         } else {
           _objetivosSelecionados = [];
         }
-        // -----------------------------------------------------------
+
+        // --- CONVERSÃO DA REFERÊNCIA (JSON COM FOTOS) ---
+        final refTexto = data['perfil_artista_referencia'] ?? '';
+        if (refTexto.isNotEmpty) {
+          try {
+            final List decoded = json.decode(refTexto);
+            _artistasSelecionados = decoded
+                .map((e) => Map<String, String>.from(e))
+                .toList();
+          } catch (e) {
+            final nomes = refTexto.split(', ');
+            _artistasSelecionados = nomes
+                .map((n) => {'name': n, 'image': ''})
+                .toList();
+          }
+        } else {
+          _artistasSelecionados = [];
+        }
 
         if (_perfil!.perfilCidade != null &&
             _perfil!.perfilCidade!.isNotEmpty) {
@@ -140,7 +187,6 @@ class ProfileViewModel extends ChangeNotifier {
             'musico_id, instrumento_id, instrumento_nivel, instrumentos(instrumento_nome)',
           )
           .eq('musico_id', userId);
-
       _meusInstrumentos = (data as List)
           .map((json) => MusicoInstrumento.fromJson(json))
           .toList();
@@ -162,7 +208,6 @@ class ProfileViewModel extends ChangeNotifier {
         instrumentoId: instrumentoId,
         instrumentoNivel: nivel,
       );
-
       await _supabase.from('musico_instrumentos').upsert(novoVinculo.toJson());
       await carregarMeusInstrumentos(userId);
       return true;
@@ -179,14 +224,12 @@ class ProfileViewModel extends ChangeNotifier {
   Future<bool> removerInstrumento(int instrumentoId) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return false;
-
     try {
       await _supabase
           .from('musico_instrumentos')
           .delete()
           .eq('musico_id', userId)
           .eq('instrumento_id', instrumentoId);
-
       await carregarMeusInstrumentos(userId);
       return true;
     } catch (e) {
@@ -200,9 +243,11 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // --- TRANSFORMA A LISTA DE VOLTA EM TEXTO PARA SALVAR ---
       final jsonParaSalvar = perfilAtualizado.toJson();
       jsonParaSalvar['perfil_objetivo'] = _objetivosSelecionados.join(', ');
+
+      // Omitimos a referência aqui para não sobrescrever o JSON recém salvo pelo auto-save
+      jsonParaSalvar.remove('perfil_artista_referencia');
 
       await _supabase.from('perfis_musicos').upsert(jsonParaSalvar);
       _perfil = perfilAtualizado;
@@ -247,7 +292,8 @@ class ProfileViewModel extends ChangeNotifier {
     _meusInstrumentos = [];
     _cidadeEstado = null;
     _errorMessage = null;
-    _objetivosSelecionados = []; // --- LIMPA A LISTA AO SAIR ---
+    _objetivosSelecionados = [];
+    _artistasSelecionados = [];
     notifyListeners();
   }
 
@@ -298,7 +344,6 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> alternarHorario(String dia, String turno) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
-
     final chave = '$dia-$turno';
     final existe = _horariosDisponiveis.contains(chave);
 
@@ -327,7 +372,6 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> salvarGenero(int generoId, bool isPrioritario) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
-
     try {
       await _supabase.from('musico_generos').insert({
         'perfil_id': userId,
@@ -368,29 +412,23 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  // --- BUSCA DE ARTISTAS NA API DO ITUNES COM FOTO (CORRIGIDO) ---
   Future<List<Map<String, String>>> buscarArtistasNoiTunes(String query) async {
     if (query.trim().length < 3) return [];
-
     try {
-      // entity=album (para ter a foto) e attribute=artistTerm (obrigatório bater com o nome da banda)
       final url = Uri.parse(
         'https://itunes.apple.com/search?term=$query&entity=album&attribute=artistTerm&limit=15',
       );
-
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final results = data['results'] as List;
-
         final Map<String, Map<String, String>> artistasUnicos = {};
 
         for (var r in results) {
           final artistName = r['artistName']?.toString() ?? '';
           final artworkUrl = r['artworkUrl100']?.toString() ?? '';
 
-          // Confirma dupla para evitar qualquer lixo da API
           if (artistName.isNotEmpty &&
               artistName.toLowerCase().contains(query.toLowerCase()) &&
               !artistasUnicos.containsKey(artistName)) {
@@ -399,10 +437,8 @@ class ProfileViewModel extends ChangeNotifier {
               'image': artworkUrl,
             };
           }
-
           if (artistasUnicos.length >= 5) break;
         }
-
         return artistasUnicos.values.toList();
       }
     } catch (e) {
