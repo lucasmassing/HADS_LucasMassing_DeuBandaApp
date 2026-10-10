@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -44,6 +45,7 @@ class MatchingViewModel extends ChangeNotifier {
           .select('''
             perfil_cidade,
             perfil_objetivo,
+            perfil_artista_referencia,
             musico_instrumentos (instrumento_nivel),
             musico_generos (genero_id),
             disponibilidade_semanal (dia_semana, turno)
@@ -67,6 +69,17 @@ class MatchingViewModel extends ChangeNotifier {
           .map<int>((g) => g['genero_id'] as int)
           .toSet();
 
+      Set<String> minhasBandas = {};
+      final refTexto = meuPerfilReq['perfil_artista_referencia'] ?? '';
+      if (refTexto.isNotEmpty) {
+        try {
+          final List decoded = json.decode(refTexto);
+          minhasBandas = decoded
+              .map<String>((e) => e['name'].toString().toLowerCase().trim())
+              .toSet();
+        } catch (e) {}
+      }
+
       Set<String> minhaDisp = (meuPerfilReq['disponibilidade_semanal'] as List)
           .map<String>((d) => '${d['dia_semana']}-${d['turno']}')
           .toSet();
@@ -79,6 +92,7 @@ class MatchingViewModel extends ChangeNotifier {
             perfil_nome, 
             perfil_cidade, 
             perfil_bio, 
+            perfil_artista_referencia,
             perfil_objetivo,
             musico_instrumentos (
               instrumento_nivel, 
@@ -100,15 +114,34 @@ class MatchingViewModel extends ChangeNotifier {
         int scoreComportamental = 0;
         int scoreTecnico = 0;
 
-        // Dimensão 1: Artística (Máx 30%) - Gêneros em comum
+        // Dimensão 1: Artística (Máx 30%) - 15% Gêneros + 15% Bandas
         List generosOutro = musico['musico_generos'] ?? [];
         Set<int> idsOutro = generosOutro
             .map<int>((g) => g['genero_id'] as int)
             .toSet();
+
         if (meusGeneros.isNotEmpty && idsOutro.isNotEmpty) {
-          int emComum = meusGeneros.intersection(idsOutro).length;
-          scoreArtistico = ((emComum / meusGeneros.length) * 30)
-              .clamp(0, 30)
+          int generosEmComum = meusGeneros.intersection(idsOutro).length;
+          scoreArtistico += ((generosEmComum / meusGeneros.length) * 15)
+              .clamp(0, 15)
+              .toInt();
+        }
+
+        Set<String> bandasOutro = {};
+        final refOutroTexto = musico['perfil_artista_referencia'] ?? '';
+        if (refOutroTexto.isNotEmpty) {
+          try {
+            final List decoded = json.decode(refOutroTexto);
+            bandasOutro = decoded
+                .map<String>((e) => e['name'].toString().toLowerCase().trim())
+                .toSet();
+          } catch (e) {}
+        }
+
+        if (minhasBandas.isNotEmpty && bandasOutro.isNotEmpty) {
+          int bandasEmComum = minhasBandas.intersection(bandasOutro).length;
+          scoreArtistico += ((bandasEmComum / minhasBandas.length) * 15)
+              .clamp(0, 15)
               .toInt();
         }
 
@@ -118,10 +151,16 @@ class MatchingViewModel extends ChangeNotifier {
             .map<String>((d) => '${d['dia_semana']}-${d['turno']}')
             .toSet();
         if (minhaDisp.isNotEmpty && turnosOutro.isNotEmpty) {
-          int emComum = minhaDisp.intersection(turnosOutro).length;
-          scoreLogistico += ((emComum / minhaDisp.length) * 15)
+          int turnosEmComum = minhaDisp.intersection(turnosOutro).length;
+          scoreLogistico += ((turnosEmComum / minhaDisp.length) * 15)
               .clamp(0, 15)
               .toInt();
+        }
+
+        if (minhaCidade != null &&
+            musico['perfil_cidade'] != null &&
+            minhaCidade == musico['perfil_cidade']) {
+          scoreLogistico += 15;
         }
         if (minhaCidade != null &&
             musico['perfil_cidade'] != null &&
