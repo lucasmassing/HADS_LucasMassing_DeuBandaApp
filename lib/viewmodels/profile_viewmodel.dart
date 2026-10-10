@@ -33,6 +33,10 @@ class ProfileViewModel extends ChangeNotifier {
   List<Map<String, String>> _artistasSelecionados = [];
   List<Map<String, String>> get artistasSelecionados => _artistasSelecionados;
 
+  // variaveis para API do IBGE
+  List<String> _todasCidades = [];
+  List<String> get todasCidades => _todasCidades;
+
   final List<String> todosObjetivos = [
     'Hobby e Diversão',
     'Banda Cover / Tributo',
@@ -60,6 +64,7 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> _inicializarDados() async {
     await carregarInstrumentosDisponiveis();
     await carregarGenerosDisponiveis();
+    await carregarCidadesIbge();
     await carregarPerfil();
   }
 
@@ -160,14 +165,6 @@ class ProfileViewModel extends ChangeNotifier {
           _artistasSelecionados = [];
         }
 
-        if (_perfil!.perfilCidade != null &&
-            _perfil!.perfilCidade!.isNotEmpty) {
-          _cidadeEstado = _perfil!.perfilCidade;
-        } else if (_perfil!.perfilCep != null &&
-            _perfil!.perfilCep!.isNotEmpty) {
-          await buscarCep(_perfil!.perfilCep!);
-        }
-
         await carregarMeusInstrumentos(user.id);
         await carregarDadosExtras();
       }
@@ -259,32 +256,6 @@ class ProfileViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> buscarCep(String cep) async {
-    final cepLimpo = cep.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cepLimpo.length != 8) {
-      _cidadeEstado = null;
-      notifyListeners();
-      return;
-    }
-
-    try {
-      final response = await http.get(
-        Uri.parse('https://viacep.com.br/ws/$cepLimpo/json/'),
-      );
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['erro'] == null) {
-          _cidadeEstado = '${data['localidade']} - ${data['uf']}';
-        } else {
-          _cidadeEstado = 'CEP não encontrado';
-        }
-      }
-    } catch (e) {
-      _cidadeEstado = 'Erro ao buscar localização';
-    }
-    notifyListeners();
   }
 
   void limparDados() {
@@ -445,5 +416,36 @@ class ProfileViewModel extends ChangeNotifier {
       debugPrint('Erro ao buscar artista com foto: $e');
     }
     return [];
+  }
+
+  // API do IBGE para buscar todas as cidades de um estado
+  void setCidadeEstado(String cidade) {
+    _cidadeEstado = cidade;
+    notifyListeners();
+  }
+
+  Future<void> carregarCidadesIbge() async {
+    if (_todasCidades.isNotEmpty) return; // Evita carregar duas vezes
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://servicodados.ibge.gov.br/api/v1/localidades/municipios',
+        ),
+      );
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body);
+        _todasCidades = data.map<String>((cidade) {
+          final nome = cidade['nome'] ?? '';
+          final uf =
+              cidade['microrregiao']?['mesorregiao']?['UF']?['sigla'] ?? '';
+          return '$nome - $uf';
+        }).toList();
+
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar cidades do IBGE: $e');
+    }
   }
 }

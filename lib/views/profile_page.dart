@@ -18,7 +18,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   final _nomeController = TextEditingController();
   final _bioController = TextEditingController();
-  final _cepController = TextEditingController();
   final _referenciaController = TextEditingController();
 
   @override
@@ -29,7 +28,6 @@ class _ProfilePageState extends State<ProfilePage> {
       if (viewModel.perfil != null) {
         _nomeController.text = viewModel.perfil!.perfilNome;
         _bioController.text = viewModel.perfil!.perfilBio ?? '';
-        _cepController.text = viewModel.perfil!.perfilCep ?? '';
       }
     });
   }
@@ -46,7 +44,6 @@ class _ProfilePageState extends State<ProfilePage> {
       perfilId: userId,
       perfilNome: _nomeController.text.trim(),
       perfilBio: _bioController.text.trim(),
-      perfilCep: _cepController.text.trim(),
       perfilCoordenadas: null,
       perfilCidade: viewModel.cidadeEstado,
       perfilObjetivo: viewModel.objetivosSelecionados.join(', '),
@@ -329,33 +326,68 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _cepController,
-                        decoration: const InputDecoration(
-                          labelText: 'CEP',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.location_on),
-                          counterText: '',
+
+                      // Campo de CEP
+                      Autocomplete<String>(
+                        initialValue: TextEditingValue(
+                          text: viewModel.cidadeEstado ?? '',
                         ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 8,
-                        onChanged: (value) {
-                          if (value.length == 8) viewModel.buscarCep(value);
+                        optionsBuilder: (TextEditingValue textEditingValue) {
+                          if (textEditingValue.text.length < 2) {
+                            return const Iterable<String>.empty();
+                          }
+                          return viewModel.todasCidades.where((cidade) {
+                            final busca = textEditingValue.text.toLowerCase();
+                            return cidade.toLowerCase().contains(busca);
+                          });
+                        },
+                        onSelected: (String selection) {
+                          viewModel.setCidadeEstado(selection);
+                        },
+                        fieldViewBuilder:
+                            (context, controller, focusNode, onFieldSubmitted) {
+                              return TextFormField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: InputDecoration(
+                                  labelText: 'Cidade',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.location_city),
+                                ),
+                              );
+                            },
+                        optionsViewBuilder: (context, onSelected, options) {
+                          return Align(
+                            alignment: Alignment.topLeft,
+                            child: Material(
+                              elevation: 4.0,
+                              borderRadius: BorderRadius.circular(8),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxHeight: 250,
+                                  maxWidth: 300,
+                                ),
+                                child: ListView.builder(
+                                  padding: EdgeInsets.zero,
+                                  shrinkWrap: true,
+                                  itemCount: options.length,
+                                  itemBuilder: (BuildContext context, int index) {
+                                    final String option = options.elementAt(
+                                      index,
+                                    );
+                                    return ListTile(
+                                      title: Text(option),
+                                      onTap: () {
+                                        onSelected(option);
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
                         },
                       ),
-                      if (viewModel.cidadeEstado != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: Text(
-                            viewModel.cidadeEstado!,
-                            style: TextStyle(
-                              color: viewModel.cidadeEstado!.contains('Erro')
-                                  ? Colors.red
-                                  : Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
                       const SizedBox(height: 16),
 
                       const Text(
