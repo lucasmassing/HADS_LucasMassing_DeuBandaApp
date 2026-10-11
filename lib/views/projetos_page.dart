@@ -17,8 +17,8 @@ class _ProjetosPageState extends State<ProjetosPage> {
     final formKey = GlobalKey<FormState>();
     final tituloController = TextEditingController();
     final descricaoController = TextEditingController();
-    final funcaoController = TextEditingController();
-    final localizacaoController = TextEditingController();
+
+    context.read<ProjetoViewModel>().limparFormularioCriacao();
 
     showModalBottomSheet(
       context: context,
@@ -34,99 +34,195 @@ class _ProjetosPageState extends State<ProjetosPage> {
             right: 24,
             top: 24,
           ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Criar Nova Vaga/Banda',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: tituloController,
-                  decoration: const InputDecoration(
-                    labelText: 'Título do Projeto (Ex: Banda de Rock)',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: funcaoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Função Desejada (Ex: Baterista)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: localizacaoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Localização (Ex: São Paulo - SP)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: descricaoController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Descrição',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (!formKey.currentState!.validate()) return;
+          child: Consumer<ProjetoViewModel>(
+            builder: (context, viewModel, child) {
+              return Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Criar Nova Vaga/Banda',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: tituloController,
+                      decoration: const InputDecoration(
+                        labelText: 'Título do Projeto (Ex: Banda de Rock)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) => v!.isEmpty ? 'Obrigatório' : null,
+                    ),
+                    const SizedBox(height: 12),
 
-                      final userId =
-                          Supabase.instance.client.auth.currentUser?.id;
-                      if (userId == null) return;
+                    // campo de funções desejadas (instrumentos)
+                    const Text(
+                      'Funções Desejadas (Instrumentos)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      children: viewModel.funcoesSelecionadas.map((funcao) {
+                        return Chip(
+                          label: Text(funcao),
+                          deleteIcon: const Icon(Icons.close, size: 18),
+                          onDeleted: () => viewModel.removerFuncao(funcao),
+                          backgroundColor: Colors.deepPurple.shade50,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 8),
 
-                      final novoProjeto = Projeto(
-                        criadorId: userId,
-                        projetoTitulo: tituloController.text.trim(),
-                        projetoDescricao: descricaoController.text.trim(),
-                        projetoFuncaoDesejada: funcaoController.text.trim(),
-                        projetoLocalizacao: localizacaoController.text.trim(),
-                      );
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Adicionar função...',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.music_note),
+                      ),
+                      items: viewModel.todosInstrumentos.map((inst) {
+                        return DropdownMenuItem(
+                          value: inst.instrumentoNome,
+                          child: Text(inst.instrumentoNome),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          viewModel.adicionarFuncao(val);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-                      final viewModel = context.read<ProjetoViewModel>();
-                      final sucesso = await viewModel.criarProjeto(novoProjeto);
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              sucesso
-                                  ? 'Projeto criado com sucesso!'
-                                  : viewModel.errorMessage ?? 'Erro',
+                    // campo de cidade com autocomplete
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.length < 2)
+                          return const Iterable<String>.empty();
+                        return viewModel.todasCidades.where((cidade) {
+                          return cidade.toLowerCase().contains(
+                            textEditingValue.text.toLowerCase(),
+                          );
+                        });
+                      },
+                      onSelected: (String selection) =>
+                          viewModel.setCidadeProjeto(selection),
+                      fieldViewBuilder:
+                          (context, controller, focusNode, onFieldSubmitted) {
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              decoration: InputDecoration(
+                                labelText: viewModel.todasCidades.isEmpty
+                                    ? 'Carregando cidades...'
+                                    : 'Localização (Ex: São Paulo - SP)',
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.location_city),
+                              ),
+                              onChanged: (val) =>
+                                  viewModel.setCidadeProjeto(val),
+                            );
+                          },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4.0,
+                            borderRadius: BorderRadius.circular(8),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxHeight: 250,
+                                maxWidth: 300,
+                              ),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: options.length,
+                                itemBuilder: (context, index) {
+                                  final option = options.elementAt(index);
+                                  return ListTile(
+                                    title: Text(option),
+                                    onTap: () => onSelected(option),
+                                  );
+                                },
+                              ),
                             ),
-                            backgroundColor: sucesso
-                                ? Colors.green
-                                : Colors.red,
                           ),
                         );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
+                      },
                     ),
-                    child: const Text('Publicar Vaga'),
-                  ),
+                    const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: descricaoController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Descrição',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (!formKey.currentState!.validate()) return;
+
+                          final userId =
+                              Supabase.instance.client.auth.currentUser?.id;
+                          if (userId == null) return;
+
+                          final novoProjeto = Projeto(
+                            criadorId: userId,
+                            projetoTitulo: tituloController.text.trim(),
+                            projetoDescricao: descricaoController.text.trim(),
+                            projetoFuncaoDesejada: viewModel.funcoesSelecionadas
+                                .join(', '),
+                            projetoLocalizacao: viewModel.cidadeSelecionada,
+                          );
+
+                          final sucesso = await viewModel.criarProjeto(
+                            novoProjeto,
+                          );
+
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  sucesso
+                                      ? 'Projeto criado com sucesso!'
+                                      : viewModel.errorMessage ?? 'Erro',
+                                ),
+                                backgroundColor: sucesso
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Publicar Vaga'),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
-                const SizedBox(height: 24),
-              ],
-            ),
+              );
+            },
           ),
         );
       },

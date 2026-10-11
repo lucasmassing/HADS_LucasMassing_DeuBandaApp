@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/projeto.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/instrumento.dart';
 
 class ProjetoViewModel extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
@@ -16,6 +19,84 @@ class ProjetoViewModel extends ChangeNotifier {
 
   ProjetoViewModel() {
     carregarProjetos();
+    carregarCidadesIbge();
+    carregarInstrumentos();
+  }
+
+  // API do IBGE
+  List<String> _todasCidades = [];
+  List<String> get todasCidades => _todasCidades;
+
+  String? _cidadeSelecionada;
+  String? get cidadeSelecionada => _cidadeSelecionada;
+
+  void setCidadeProjeto(String cidade) {
+    _cidadeSelecionada = cidade;
+    notifyListeners();
+  }
+
+  Future<void> carregarCidadesIbge() async {
+    if (_todasCidades.isNotEmpty) return;
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://servicodados.ibge.gov.br/api/v1/localidades/municipios',
+        ),
+      );
+      if (response.statusCode == 200) {
+        final List data = json.decode(response.body);
+        _todasCidades = data.map<String>((cidade) {
+          final nome = cidade['nome'] ?? '';
+          final uf =
+              cidade['microrregiao']?['mesorregiao']?['UF']?['sigla'] ?? '';
+          return '$nome - $uf';
+        }).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Erro IBGE: $e');
+    }
+  }
+
+  // controle de instrumentos
+  List<String> _funcoesSelecionadas = [];
+  List<String> get funcoesSelecionadas => _funcoesSelecionadas;
+
+  List<Instrumento> _todosInstrumentos = [];
+  List<Instrumento> get todosInstrumentos => _todosInstrumentos;
+
+  Future<void> carregarInstrumentos() async {
+    if (_todosInstrumentos.isNotEmpty) return;
+    try {
+      final data = await _supabase
+          .from('instrumentos')
+          .select()
+          .order('instrumento_nome');
+      _todosInstrumentos = (data as List)
+          .map((json) => Instrumento.fromJson(json))
+          .toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erro ao carregar instrumentos no projeto: $e');
+    }
+  }
+
+  void adicionarFuncao(String funcao) {
+    if (!_funcoesSelecionadas.contains(funcao)) {
+      _funcoesSelecionadas.add(funcao);
+      notifyListeners();
+    }
+  }
+
+  void removerFuncao(String funcao) {
+    _funcoesSelecionadas.remove(funcao);
+    notifyListeners();
+  }
+
+  void limparFormularioCriacao() {
+    _cidadeSelecionada = null;
+    _funcoesSelecionadas = [];
+    notifyListeners();
   }
 
   Future<void> carregarProjetos() async {
