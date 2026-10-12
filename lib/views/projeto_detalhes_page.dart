@@ -151,9 +151,7 @@ class ProjetoDetalhesPage extends StatelessWidget {
               : ElevatedButton(
                   onPressed: () async {
                     final viewModel = context.read<ProjetoViewModel>();
-                    final sucesso = await viewModel.candidatarSe(
-                      projeto.projetoId!,
-                    );
+                    final sucesso = await viewModel.candidatarSe(projeto);
 
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -166,8 +164,9 @@ class ProjetoDetalhesPage extends StatelessWidget {
                           backgroundColor: sucesso ? Colors.green : Colors.red,
                         ),
                       );
-                      if (sucesso)
-                        Navigator.pop(context); // Volta pro mural se der certo
+                      if (sucesso) {
+                        Navigator.pop(context);
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(

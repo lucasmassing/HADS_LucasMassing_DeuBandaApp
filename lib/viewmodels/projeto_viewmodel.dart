@@ -216,7 +216,8 @@ class ProjetoViewModel extends ChangeNotifier {
   }
 
   // fluxo de candidaturas
-  Future<bool> candidatarSe(String projetoId) async {
+  // fluxo de candidaturas
+  Future<bool> candidatarSe(Projeto projeto) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return false;
 
@@ -224,12 +225,11 @@ class ProjetoViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Verifica se já existe uma candidatura deste usuário para esta vaga
       final existente = await _supabase
           .from('candidaturas')
           .select()
           .eq('candidato_id', userId)
-          .eq('projeto_id', projetoId)
+          .eq('projeto_id', projeto.projetoId!)
           .maybeSingle();
 
       if (existente != null) {
@@ -237,11 +237,28 @@ class ProjetoViewModel extends ChangeNotifier {
         return false;
       }
 
-      // 2. Insere a nova candidatura
+      // Insere a nova candidatura
       await _supabase.from('candidaturas').insert({
         'candidato_id': userId,
-        'projeto_id': projetoId,
+        'projeto_id': projeto.projetoId!,
       });
+
+      // Busca o nome de quem está se candidatando
+      final meuPerfil = await _supabase
+          .from('perfis_musicos')
+          .select('perfil_nome')
+          .eq('perfil_id', userId)
+          .maybeSingle();
+
+      final meuNome = meuPerfil?['perfil_nome'] ?? 'Um músico';
+
+      //Cria a notificação para o DONO da vaga
+      await _supabase.from('notificacoes').insert({
+        'perfil_id': projeto.criadorId, // Envia para o criador
+        'mensagem':
+            '$meuNome acabou de se candidatar para a sua vaga "${projeto.projetoTitulo}"!',
+      });
+
       await carregarMinhasInscricoes();
       return true;
     } catch (e) {
