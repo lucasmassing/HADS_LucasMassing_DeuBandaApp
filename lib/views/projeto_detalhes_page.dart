@@ -75,18 +75,78 @@ class ProjetoDetalhesPage extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: isDonoDoProjeto
-              ? OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProjetoCandidatosPage(projeto: projeto),
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ProjetoCandidatosPage(projeto: projeto),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.list_alt),
+                        label: const Text('Candidatos'),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.list_alt),
-                  label: const Text('Ver Candidatos'),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Finalizar Vaga?'),
+                              content: const Text(
+                                'Esta vaga será fechada e não receberá mais candidatos.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Cancelar'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                  ),
+                                  child: const Text(
+                                    'Finalizar',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true && context.mounted) {
+                            final sucesso = await context
+                                .read<ProjetoViewModel>()
+                                .finalizarProjeto(projeto.projetoId!);
+                            if (sucesso && context.mounted) {
+                              Navigator.pop(context); // Volta pro mural
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Vaga finalizada com sucesso!'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.check_circle),
+                        label: const Text('Finalizar'),
+                      ),
+                    ),
+                  ],
                 )
               : ElevatedButton(
                   onPressed: () async {

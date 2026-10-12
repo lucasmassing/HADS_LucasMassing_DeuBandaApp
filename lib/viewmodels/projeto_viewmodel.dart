@@ -108,7 +108,7 @@ class ProjetoViewModel extends ChangeNotifier {
           .from('projetos')
           .select()
           .eq('projeto_status', 'ATIVO')
-          .order('projeto_titulo');
+          .order('projeto_data', ascending: false);
 
       _projetosAtivos = (data as List)
           .map((json) => Projeto.fromJson(json))
@@ -132,6 +132,27 @@ class ProjetoViewModel extends ChangeNotifier {
       return true;
     } catch (e) {
       _errorMessage = 'Erro ao criar projeto.';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> finalizarProjeto(String projetoId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _supabase
+          .from('projetos')
+          .update({'projeto_status': 'FINALIZADO'})
+          .eq('projeto_id', projetoId);
+
+      _projetosAtivos.removeWhere((p) => p.projetoId == projetoId);
+      return true;
+    } catch (e) {
+      _errorMessage = 'Erro ao finalizar a vaga.';
       return false;
     } finally {
       _isLoading = false;
