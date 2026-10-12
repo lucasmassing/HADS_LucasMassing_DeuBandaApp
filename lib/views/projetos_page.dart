@@ -14,6 +14,17 @@ class ProjetosPage extends StatefulWidget {
 }
 
 class _ProjetosPageState extends State<ProjetosPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final viewModel = context.read<ProjetoViewModel>();
+      viewModel.carregarProjetos();
+      viewModel.carregarMinhasInscricoes();
+      viewModel.carregarNotificacoes();
+    });
+  }
+
   void _mostrarModalCriarProjeto(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final tituloController = TextEditingController();
@@ -259,7 +270,11 @@ class _ProjetosPageState extends State<ProjetosPage> {
                       MaterialPageRoute(
                         builder: (_) => const NotificacoesPage(),
                       ),
-                    );
+                    ).then((_) {
+                      if (context.mounted) {
+                        context.read<ProjetoViewModel>().carregarNotificacoes();
+                      }
+                    });
                   },
                 ),
                 if (viewModel.notificacoesNaoLidas > 0)
@@ -439,7 +454,13 @@ class _ProjetosPageState extends State<ProjetosPage> {
                       builder: (context) =>
                           ProjetoDetalhesPage(projeto: projeto),
                     ),
-                  );
+                  ).then((_) {
+                    if (context.mounted) {
+                      final vm = context.read<ProjetoViewModel>();
+                      vm.carregarProjetos();
+                      vm.carregarMinhasInscricoes();
+                    }  
+                  });
                 },
                 child: const Text('Ver Detalhes'),
               ),
