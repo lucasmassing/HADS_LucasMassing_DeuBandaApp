@@ -22,6 +22,7 @@ class ProjetoViewModel extends ChangeNotifier {
     carregarMinhasInscricoes();
     carregarCidadesIbge();
     carregarInstrumentos();
+    carregarNotificacoes();
   }
 
   // API do IBGE
@@ -99,6 +100,39 @@ class ProjetoViewModel extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Erro ao carregar inscrições: $e');
+    }
+  }
+
+  // função de notificações
+  List<Map<String, dynamic>> _notificacoes = [];
+  List<Map<String, dynamic>> get notificacoes => _notificacoes;
+
+  int get notificacoesNaoLidas =>
+      _notificacoes.where((n) => n['lida'] == false).length;
+
+  Future<void> carregarNotificacoes() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+    try {
+      final data = await _supabase
+          .from('notificacoes')
+          .select()
+          .eq('perfil_id', userId)
+          .order('data_criacao', ascending: false);
+
+      _notificacoes = List<Map<String, dynamic>>.from(data);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erro ao carregar notificações: $e');
+    }
+  }
+
+  Future<void> marcarNotificacaoComoLida(String id) async {
+    try {
+      await _supabase.from('notificacoes').update({'lida': true}).eq('id', id);
+      await carregarNotificacoes();
+    } catch (e) {
+      debugPrint('Erro ao marcar como lida: $e');
     }
   }
 
@@ -227,6 +261,7 @@ class ProjetoViewModel extends ChangeNotifier {
           .from('candidaturas')
           .select('''
             candidatura_id,
+            candidato_id,
             candidatura_status,
             candidatura_data,
             perfis_musicos (
@@ -271,7 +306,7 @@ class ProjetoViewModel extends ChangeNotifier {
             .maybeSingle();
         meuTelefone = meuPerfil?['perfil_telefone'];
       }
-      
+
       final mensagem = novoStatus == 'ACEITO'
           ? 'Você foi ACEITO na vaga "$tituloVaga"! Entre em contato.'
           : 'Sua candidatura para "$tituloVaga" foi RECUSADA.';

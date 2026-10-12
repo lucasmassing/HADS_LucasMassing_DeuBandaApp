@@ -57,6 +57,9 @@ class ProfileViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  String? _telefone;
+  String? get telefone => _telefone;
+
   ProfileViewModel() {
     _inicializarDados();
   }
@@ -139,6 +142,7 @@ class ProfileViewModel extends ChangeNotifier {
 
       if (data != null) {
         _perfil = PerfilMusico.fromJson(data);
+        _telefone = data['perfil_telefone'];
 
         final objTexto = data['perfil_objetivo'] ?? '';
         if (objTexto.isNotEmpty) {
@@ -234,7 +238,10 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> salvarPerfil(PerfilMusico perfilAtualizado) async {
+  Future<bool> salvarPerfil(
+    PerfilMusico perfilAtualizado,
+    String telefone,
+  ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -243,13 +250,16 @@ class ProfileViewModel extends ChangeNotifier {
       final jsonParaSalvar = perfilAtualizado.toJson();
       jsonParaSalvar['perfil_objetivo'] = _objetivosSelecionados.join(', ');
 
-      // Omitimos a referência aqui para não sobrescrever o JSON recém salvo pelo auto-save
+      jsonParaSalvar['perfil_telefone'] = telefone;
+
       jsonParaSalvar.remove('perfil_artista_referencia');
 
       await _supabase.from('perfis_musicos').upsert(jsonParaSalvar);
       _perfil = perfilAtualizado;
+      _telefone = telefone;
       return true;
     } catch (e) {
+      // ...
       _errorMessage = 'Erro ao salvar o perfil.';
       return false;
     } finally {

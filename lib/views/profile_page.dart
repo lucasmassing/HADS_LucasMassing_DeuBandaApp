@@ -19,6 +19,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final _nomeController = TextEditingController();
   final _bioController = TextEditingController();
   final _referenciaController = TextEditingController();
+  final _telefoneController = TextEditingController();
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (viewModel.perfil != null) {
         _nomeController.text = viewModel.perfil!.perfilNome;
         _bioController.text = viewModel.perfil!.perfilBio ?? '';
+        _telefoneController.text = viewModel.telefone ?? '';
       }
     });
   }
@@ -51,7 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
           null, // Deixamos nulo aqui pois o salvamento é automático no model
     );
 
-    final sucesso = await viewModel.salvarPerfil(perfil);
+    final sucesso = await viewModel.salvarPerfil(perfil, _telefoneController.text.trim());
 
     if (!mounted) return;
 
@@ -323,6 +325,18 @@ class _ProfilePageState extends State<ProfilePage> {
                         decoration: const InputDecoration(
                           labelText: 'Biografia',
                           border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Campo de Telefone
+                      TextFormField(
+                        controller: _telefoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'WhatsApp / Telefone',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.phone),
                         ),
                       ),
                       const SizedBox(height: 16),

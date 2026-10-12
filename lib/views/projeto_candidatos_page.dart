@@ -35,7 +35,6 @@ class _ProjetoCandidatosPageState extends State<ProjetoCandidatosPage> {
   ) {
     final perfil = candidatoData['perfis_musicos'];
     final candidaturaId = candidatoData['candidatura_id'];
-    final viewModel = context.read<ProjetoViewModel>();
 
     showModalBottomSheet(
       context: context,
@@ -83,14 +82,37 @@ class _ProjetoCandidatosPageState extends State<ProjetoCandidatosPage> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        Navigator.pop(context); // Fecha o modal
-                        await viewModel.atualizarStatusCandidatura(
+                        final viewModel = context.read<ProjetoViewModel>();
+                        final sucesso = await viewModel.atualizarStatusCandidatura(
                           candidaturaId,
                           'RECUSADO',
                           candidatoData['candidato_id'],
                           widget.projeto.projetoTitulo,
                         );
-                        _carregarCandidatos(); // Atualiza a lista na ecrã
+
+                        if (context.mounted) {
+                          if (sucesso) {
+                            Navigator.pop(context); // Fecha o modal
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Candidatura recusada.'),
+                                backgroundColor: Colors
+                                    .orange,
+                              ),
+                            );
+                            _carregarCandidatos(); // Atualiza a lista na tela
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  viewModel.errorMessage ??
+                                      'Erro ao recusar candidato.',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
@@ -105,19 +127,42 @@ class _ProjetoCandidatosPageState extends State<ProjetoCandidatosPage> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        Navigator.pop(context); // Fecha o modal
-                        await viewModel.atualizarStatusCandidatura(
-                          candidaturaId,
-                          'ACEITO',
-                          candidatoData['candidato_id'],
-                          widget.projeto.projetoTitulo,
-                        );
-                        _carregarCandidatos();
+                        final viewModel = context.read<ProjetoViewModel>();
+                        final sucesso = await viewModel
+                            .atualizarStatusCandidatura(
+                              candidaturaId,
+                              'ACEITO',
+                              candidatoData['candidato_id'],
+                              widget.projeto.projetoTitulo,
+                            );
+
+                        if (context.mounted) {
+                          if (sucesso) {
+                            Navigator.pop(
+                              context,
+                            ); // Fecha o modal de avaliação
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Candidato ACEITO com sucesso!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            _carregarCandidatos(); // Atualiza a lista da tela
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  viewModel.errorMessage ?? 'Erro ao aprovar.',
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       icon: const Icon(Icons.check),
                       label: const Text('Aceitar'),
