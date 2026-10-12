@@ -87,6 +87,8 @@ class _ProjetoCandidatosPageState extends State<ProjetoCandidatosPage> {
                         await viewModel.atualizarStatusCandidatura(
                           candidaturaId,
                           'RECUSADO',
+                          candidatoData['candidato_id'],
+                          widget.projeto.projetoTitulo,
                         );
                         _carregarCandidatos(); // Atualiza a lista na ecrã
                       },
@@ -107,6 +109,8 @@ class _ProjetoCandidatosPageState extends State<ProjetoCandidatosPage> {
                         await viewModel.atualizarStatusCandidatura(
                           candidaturaId,
                           'ACEITO',
+                          candidatoData['candidato_id'],
+                          widget.projeto.projetoTitulo,
                         );
                         _carregarCandidatos();
                       },

@@ -233,111 +233,176 @@ class _ProjetosPageState extends State<ProjetosPage> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<ProjetoViewModel>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mural de Vagas'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: viewModel.carregarProjetos,
-          ),
-        ],
-      ),
-      body: viewModel.isLoading && viewModel.projetosAtivos.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : viewModel.projetosAtivos.isEmpty
-          ? const Center(child: Text('Nenhuma vaga disponível no momento.'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: viewModel.projetosAtivos.length,
-              itemBuilder: (context, index) {
-                final projeto = viewModel.projetosAtivos[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          projeto.projetoTitulo,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (projeto.projetoFuncaoDesejada != null &&
-                            projeto.projetoFuncaoDesejada!.isNotEmpty)
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.person_search,
-                                size: 16,
-                                color: Colors.deepPurple,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Busca: ${projeto.projetoFuncaoDesejada}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        if (projeto.projetoLocalizacao != null &&
-                            projeto.projetoLocalizacao!.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.location_on,
-                                  size: 16,
-                                  color: Colors.grey,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  projeto.projetoLocalizacao!,
-                                  style: const TextStyle(color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                          ),
-                        const SizedBox(height: 12),
-                        Text(
-                          projeto.projetoDescricao ?? 'Sem descrição.',
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 16),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ProjetoDetalhesPage(projeto: projeto),
-                                ),
-                              );
-                            },
-                            child: const Text('Ver Detalhes'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+    // Extrai os IDs das vagas em que me inscrevi para não mostrar no mural
+    final idsInscritos = viewModel.minhasInscricoes
+        .map((e) => e['projetos']['projeto_id'])
+        .toSet();
+    final muralFiltrado = viewModel.projetosAtivos
+        .where((p) => !idsInscritos.contains(p.projetoId))
+        .toList();
+
+    return DefaultTabController(
+      length: 2, // 2 Abas
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Mural de Vagas'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                viewModel.carregarProjetos();
+                viewModel.carregarMinhasInscricoes();
               },
             ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _mostrarModalCriarProjeto(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Nova Vaga'),
-        backgroundColor: Colors.deepPurple,
-        foregroundColor: Colors.white,
+          ],
+          bottom: const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.list), text: 'Todas as Vagas'),
+              Tab(
+                icon: Icon(Icons.playlist_add_check),
+                text: 'Minhas Inscrições',
+              ),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            // ABA 1: TODAS AS VAGAS (Mural Filtrado)
+            muralFiltrado.isEmpty
+                ? const Center(child: Text('Nenhuma vaga nova no momento.'))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: muralFiltrado.length,
+                    itemBuilder: (context, index) {
+                      final projeto = muralFiltrado[index];
+                      return _buildCardProjeto(
+                        projeto,
+                        context,
+                      ); // <- Extrapole o código do seu Card para um widget
+                    },
+                  ),
+
+            // ABA 2: MINHAS INSCRIÇÕES
+            viewModel.minhasInscricoes.isEmpty
+                ? const Center(
+                    child: Text('Você ainda não se inscreveu em nenhuma vaga.'),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: viewModel.minhasInscricoes.length,
+                    itemBuilder: (context, index) {
+                      final inscricao = viewModel.minhasInscricoes[index];
+                      final projetoData = inscricao['projetos'];
+                      final status = inscricao['candidatura_status'];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: ListTile(
+                          title: Text(
+                            projetoData['projeto_titulo'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            'Status: $status',
+                            style: TextStyle(
+                              color: status == 'ACEITO'
+                                  ? Colors.green
+                                  : (status == 'RECUSADO'
+                                        ? Colors.red
+                                        : Colors.orange),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          trailing: status == 'ACEITO'
+                              ? const Icon(
+                                  Icons.celebration,
+                                  color: Colors.green,
+                                )
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _mostrarModalCriarProjeto(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Nova Vaga'),
+          backgroundColor: Colors.deepPurple,
+          foregroundColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardProjeto(Projeto projeto, BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              projeto.projetoTitulo,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            if (projeto.projetoFuncaoDesejada != null &&
+                projeto.projetoFuncaoDesejada!.isNotEmpty)
+              Row(
+                children: [
+                  const Icon(
+                    Icons.person_search,
+                    size: 16,
+                    color: Colors.deepPurple,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Busca: ${projeto.projetoFuncaoDesejada}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            if (projeto.projetoLocalizacao != null &&
+                projeto.projetoLocalizacao!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Text(
+                      projeto.projetoLocalizacao!,
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 12),
+            Text(
+              projeto.projetoDescricao ?? 'Sem descrição.',
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ProjetoDetalhesPage(projeto: projeto),
+                    ),
+                  );
+                },
+                child: const Text('Ver Detalhes'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

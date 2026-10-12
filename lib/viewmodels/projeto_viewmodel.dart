@@ -19,6 +19,7 @@ class ProjetoViewModel extends ChangeNotifier {
 
   ProjetoViewModel() {
     carregarProjetos();
+    carregarMinhasInscricoes();
     carregarCidadesIbge();
     carregarInstrumentos();
   }
@@ -78,6 +79,26 @@ class ProjetoViewModel extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Erro ao carregar instrumentos no projeto: $e');
+    }
+  }
+
+  // fluxo de inscrições
+  List<Map<String, dynamic>> _minhasInscricoes = [];
+  List<Map<String, dynamic>> get minhasInscricoes => _minhasInscricoes;
+
+  Future<void> carregarMinhasInscricoes() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+    try {
+      final data = await _supabase
+          .from('candidaturas')
+          .select('candidatura_status, projetos(*)')
+          .eq('candidato_id', userId)
+          .order('candidatura_data', ascending: false);
+      _minhasInscricoes = List<Map<String, dynamic>>.from(data);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erro ao carregar inscrições: $e');
     }
   }
 
@@ -187,7 +208,7 @@ class ProjetoViewModel extends ChangeNotifier {
         'candidato_id': userId,
         'projeto_id': projetoId,
       });
-
+      await carregarMinhasInscricoes();
       return true;
     } catch (e) {
       _errorMessage = 'Erro ao enviar candidatura.';
@@ -227,9 +248,12 @@ class ProjetoViewModel extends ChangeNotifier {
   Future<bool> atualizarStatusCandidatura(
     String candidaturaId,
     String novoStatus,
+    String candidatoId,
+    String tituloVaga,
   ) async {
     _isLoading = true;
     notifyListeners();
+    final meuId = _supabase.auth.currentUser?.id;
 
     try {
       await _supabase
@@ -237,9 +261,30 @@ class ProjetoViewModel extends ChangeNotifier {
           .update({'candidatura_status': novoStatus})
           .eq('candidatura_id', candidaturaId);
 
+      // Busca o telefone para enviar ao candidato (caso ACEITO)
+      String? meuTelefone;
+      if (novoStatus == 'ACEITO' && meuId != null) {
+        final meuPerfil = await _supabase
+            .from('perfis_musicos')
+            .select('perfil_telefone')
+            .eq('perfil_id', meuId)
+            .maybeSingle();
+        meuTelefone = meuPerfil?['perfil_telefone'];
+      }
+      
+      final mensagem = novoStatus == 'ACEITO'
+          ? 'Você foi ACEITO na vaga "$tituloVaga"! Entre em contato.'
+          : 'Sua candidatura para "$tituloVaga" foi RECUSADA.';
+
+      await _supabase.from('notificacoes').insert({
+        'perfil_id': candidatoId,
+        'mensagem': mensagem,
+        'telefone_contato': meuTelefone,
+      });
+
       return true;
     } catch (e) {
-      _errorMessage = 'Erro ao atualizar o status da candidatura.';
+      _errorMessage = 'Erro ao avaliar candidato.';
       return false;
     } finally {
       _isLoading = false;
