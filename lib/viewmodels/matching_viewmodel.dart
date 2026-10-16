@@ -59,6 +59,21 @@ class MatchingViewModel extends ChangeNotifier {
         return;
       }
 
+      final meusProjetosReq = await _supabase
+          .from('projetos')
+          .select('projeto_funcao_desejada')
+          .eq('criador_id', userId)
+          .eq('projeto_status', 'ATIVO');
+
+      Set<String> instrumentosBuscados = {};
+      for (var p in (meusProjetosReq as List)) {
+        final funcoes = p['projeto_funcao_desejada']?.toString() ?? '';
+        if (funcoes.isNotEmpty) {
+          final lista = funcoes.split(',').map((e) => e.trim().toLowerCase());
+          instrumentosBuscados.addAll(lista);
+        }
+      }
+
       final minhaCidade = meuPerfilReq['perfil_cidade'];
       final meuObjetivo = meuPerfilReq['perfil_objetivo'];
       final minhaMediaTecnica = _calcularMediaNivel(
@@ -156,12 +171,6 @@ class MatchingViewModel extends ChangeNotifier {
               .clamp(0, 15)
               .toInt();
         }
-
-        if (minhaCidade != null &&
-            musico['perfil_cidade'] != null &&
-            minhaCidade == musico['perfil_cidade']) {
-          scoreLogistico += 15;
-        }
         if (minhaCidade != null &&
             musico['perfil_cidade'] != null &&
             minhaCidade.toString().trim().toLowerCase() ==
@@ -201,12 +210,35 @@ class MatchingViewModel extends ChangeNotifier {
             scoreLogistico +
             scoreComportamental +
             scoreTecnico;
+
+        // --- NOVA LÓGICA: Verifica se é Super Match ---
+        bool isSuperMatch = false;
+        if (musico['match_score'] >= 80 && instrumentosBuscados.isNotEmpty) {
+          final instOutro = musico['musico_instrumentos'] as List? ?? [];
+          for (var inst in instOutro) {
+            final nomeInst =
+                inst['instrumentos']?['instrumento_nome']
+                    ?.toString()
+                    .toLowerCase()
+                    .trim() ??
+                '';
+            if (instrumentosBuscados.contains(nomeInst)) {
+              isSuperMatch = true;
+              break;
+            }
+          }
+        }
+        musico['is_super_match'] = isSuperMatch;
       }
 
-      // 4. Ordena do maior match para o menor
-      listaMusicos.sort(
-        (a, b) => (b['match_score'] as int).compareTo(a['match_score'] as int),
-      );
+      // 4. Ordena: Primeiro os Super Matches, depois do maior match para o menor
+      listaMusicos.sort((a, b) {
+        if (a['is_super_match'] == true && b['is_super_match'] != true)
+          return -1;
+        if (b['is_super_match'] == true && a['is_super_match'] != true)
+          return 1;
+        return (b['match_score'] as int).compareTo(a['match_score'] as int);
+      });
 
       _musicosFeed = listaMusicos;
     } catch (e) {

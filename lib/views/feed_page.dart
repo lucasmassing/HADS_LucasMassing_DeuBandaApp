@@ -42,11 +42,9 @@ class FeedPage extends StatelessWidget {
                 final musico = viewModel.musicosFeed[index];
                 final instrumentosMap =
                     musico['musico_instrumentos'] as List<dynamic>? ?? [];
-
-                // Resgata o score calculado no ViewModel
                 final matchScore = musico['match_score'] ?? 0;
+                final bool isSuperMatch = musico['is_super_match'] == true;
 
-                // Define a cor baseada na percentagem
                 Color corMatch;
                 if (matchScore >= 70)
                   corMatch = Colors.green;
@@ -59,14 +57,21 @@ class FeedPage extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
+                    side: isSuperMatch
+                        ? const BorderSide(color: Colors.amber, width: 2)
+                        : BorderSide.none,
                   ),
-                  elevation: 4,
+                  elevation: isSuperMatch ? 6 : 4,
+                  shadowColor: isSuperMatch
+                      ? Colors.amber.withOpacity(0.4)
+                      : null,
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const CircleAvatar(
                               radius: 30,
@@ -96,10 +101,40 @@ class FeedPage extends StatelessWidget {
                                         color: Colors.grey,
                                       ),
                                     ),
+                                  if (isSuperMatch)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade100,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.local_fire_department,
+                                            color: Colors.orange,
+                                            size: 14,
+                                          ),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            'Super Match',
+                                            style: TextStyle(
+                                              color: Colors.orange,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
-                            // Indicador de Afinidade (Match Score)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
