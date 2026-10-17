@@ -135,11 +135,13 @@ class MatchingViewModel extends ChangeNotifier {
             .map<int>((g) => g['genero_id'] as int)
             .toSet();
 
-        if (meusGeneros.isNotEmpty && idsOutro.isNotEmpty) {
+        if (meusGeneros.isNotEmpty || idsOutro.isNotEmpty) {
           int generosEmComum = meusGeneros.intersection(idsOutro).length;
-          scoreArtistico += ((generosEmComum / meusGeneros.length) * 15)
-              .clamp(0, 15)
-              .toInt();
+          int maxGen = meusGeneros.length > idsOutro.length
+              ? meusGeneros.length
+              : idsOutro.length;
+          if (maxGen > 0)
+            scoreArtistico += ((generosEmComum / maxGen) * 15).round();
         }
 
         Set<String> bandasOutro = {};
@@ -153,11 +155,13 @@ class MatchingViewModel extends ChangeNotifier {
           } catch (e) {}
         }
 
-        if (minhasBandas.isNotEmpty && bandasOutro.isNotEmpty) {
+        if (minhasBandas.isNotEmpty || bandasOutro.isNotEmpty) {
           int bandasEmComum = minhasBandas.intersection(bandasOutro).length;
-          scoreArtistico += ((bandasEmComum / minhasBandas.length) * 15)
-              .clamp(0, 15)
-              .toInt();
+          int maxBan = minhasBandas.length > bandasOutro.length
+              ? minhasBandas.length
+              : bandasOutro.length;
+          if (maxBan > 0)
+            scoreArtistico += ((bandasEmComum / maxBan) * 15).round();
         }
 
         // Dimensão 2: Logística (Máx 30%) - 15% Horários + 15% Cidade
@@ -165,12 +169,16 @@ class MatchingViewModel extends ChangeNotifier {
         Set<String> turnosOutro = dispOutro
             .map<String>((d) => '${d['dia_semana']}-${d['turno']}')
             .toSet();
-        if (minhaDisp.isNotEmpty && turnosOutro.isNotEmpty) {
+
+        if (minhaDisp.isNotEmpty || turnosOutro.isNotEmpty) {
           int turnosEmComum = minhaDisp.intersection(turnosOutro).length;
-          scoreLogistico += ((turnosEmComum / minhaDisp.length) * 15)
-              .clamp(0, 15)
-              .toInt();
+          int maxDisp = minhaDisp.length > turnosOutro.length
+              ? minhaDisp.length
+              : turnosOutro.length;
+          if (maxDisp > 0)
+            scoreLogistico += ((turnosEmComum / maxDisp) * 15).round();
         }
+
         if (minhaCidade != null &&
             musico['perfil_cidade'] != null &&
             minhaCidade.toString().trim().toLowerCase() ==
@@ -178,14 +186,28 @@ class MatchingViewModel extends ChangeNotifier {
           scoreLogistico += 15;
         }
 
-        // Dimensão 3: Comportamental (Máx 20%) - Objetivo igual
-        if (meuObjetivo != null &&
-            musico['perfil_objetivo'] != null &&
-            meuObjetivo.toString().isNotEmpty) {
-          if (meuObjetivo.toString().trim().toLowerCase() ==
-              musico['perfil_objetivo'].toString().trim().toLowerCase()) {
-            scoreComportamental = 20;
-          }
+        // Dimensão 3: Comportamental (Máx 20%) - Objetivos em comum
+        Set<String> meusObjs = (meuObjetivo ?? '')
+            .toString()
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .toSet();
+        Set<String> outrosObjs = (musico['perfil_objetivo'] ?? '')
+            .toString()
+            .split(',')
+            .map((e) => e.trim().toLowerCase())
+            .toSet();
+
+        meusObjs.removeWhere((e) => e.isEmpty);
+        outrosObjs.removeWhere((e) => e.isEmpty);
+
+        if (meusObjs.isNotEmpty || outrosObjs.isNotEmpty) {
+          int objsEmComum = meusObjs.intersection(outrosObjs).length;
+          int maxObjs = meusObjs.length > outrosObjs.length
+              ? meusObjs.length
+              : outrosObjs.length;
+          if (maxObjs > 0)
+            scoreComportamental = ((objsEmComum / maxObjs) * 20).round();
         }
 
         // Dimensão 4: Técnica (Máx 20%) - Proximidade do nível de proficiência
@@ -204,6 +226,13 @@ class MatchingViewModel extends ChangeNotifier {
           }
         }
 
+        // Soma e guarda o score final (Máx 100)
+        musico['match_score'] =
+            scoreArtistico +
+            scoreLogistico +
+            scoreComportamental +
+            scoreTecnico;
+        
         // Soma e guarda o score final (Máx 100)
         musico['match_score'] =
             scoreArtistico +
