@@ -21,15 +21,15 @@ class _ProfilePageState extends State<ProfilePage> {
   final _referenciaController = TextEditingController();
   final _telefoneController = TextEditingController();
 
+  bool _dadosIniciaisPreenchidos = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final viewModel = context.read<ProfileViewModel>();
-      if (viewModel.perfil != null) {
-        _nomeController.text = viewModel.perfil!.perfilNome;
-        _bioController.text = viewModel.perfil!.perfilBio ?? '';
-        _telefoneController.text = viewModel.telefone ?? '';
+      if (viewModel.perfil != null && !viewModel.isFetching) {
+        viewModel.carregarPerfil();
       }
     });
   }
@@ -53,7 +53,10 @@ class _ProfilePageState extends State<ProfilePage> {
           null, // Deixamos nulo aqui pois o salvamento é automático no model
     );
 
-    final sucesso = await viewModel.salvarPerfil(perfil, _telefoneController.text.trim());
+    final sucesso = await viewModel.salvarPerfil(
+      perfil,
+      _telefoneController.text.trim(),
+    );
 
     if (!mounted) return;
 
@@ -284,6 +287,13 @@ class _ProfilePageState extends State<ProfilePage> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    if (!_dadosIniciaisPreenchidos && viewModel.perfil != null) {
+      _nomeController.text = viewModel.perfil!.perfilNome;
+      _bioController.text = viewModel.perfil!.perfilBio ?? '';
+      _telefoneController.text = viewModel.telefone ?? '';
+      _dadosIniciaisPreenchidos = true;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Meu Perfil'),
@@ -368,6 +378,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.location_city),
                                 ),
+                                onChanged: (val) {
+                                  viewModel.setCidadeEstado(val);
+                                },
                               );
                             },
                         optionsViewBuilder: (context, onSelected, options) {
@@ -385,17 +398,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                   padding: EdgeInsets.zero,
                                   shrinkWrap: true,
                                   itemCount: options.length,
-                                  itemBuilder: (BuildContext context, int index) {
-                                    final String option = options.elementAt(
-                                      index,
-                                    );
-                                    return ListTile(
-                                      title: Text(option),
-                                      onTap: () {
-                                        onSelected(option);
+                                  itemBuilder:
+                                      (BuildContext context, int index) {
+                                        final String option = options.elementAt(
+                                          index,
+                                        );
+                                        return ListTile(
+                                          title: Text(option),
+                                          onTap: () {
+                                            onSelected(option);
+                                          },
+                                        );
                                       },
-                                    );
-                                  },
                                 ),
                               ),
                             ),

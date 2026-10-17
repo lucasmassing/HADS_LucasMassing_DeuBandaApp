@@ -143,6 +143,7 @@ class ProfileViewModel extends ChangeNotifier {
       if (data != null) {
         _perfil = PerfilMusico.fromJson(data);
         _telefone = data['perfil_telefone'];
+        _cidadeEstado = _perfil!.perfilCidade;
 
         final objTexto = data['perfil_objetivo'] ?? '';
         if (objTexto.isNotEmpty) {
