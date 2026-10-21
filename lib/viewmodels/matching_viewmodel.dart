@@ -298,6 +298,21 @@ class MatchingViewModel extends ChangeNotifier {
         'match_status': 'PENDENTE',
       });
 
+      final responsePerfil = await _supabase
+          .from('perfis_musicos')
+          .select('perfil_nome')
+          .eq('perfil_id', userId)
+          .maybeSingle();
+          
+      final meuPerfil = responsePerfil as Map<String, dynamic>?;
+      
+      final String meuNome = (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';
+      
+      await _supabase.from('notificacoes').insert({
+        'perfil_id': musicoDestinoId,
+        'mensagem': '$meuNome acabou de enviar um pedido de conexão! Verifique a aba de Notificações.',
+      });
+
       _musicosFeed.removeWhere((m) => m['perfil_id'] == musicoDestinoId);
       notifyListeners();
 
@@ -320,6 +335,7 @@ class MatchingViewModel extends ChangeNotifier {
           .from('matchings')
           .select('''
             match_id,
+            musico_origem_id,
             match_status,
             perfis_musicos!matchings_musico_origem_id_fkey (
               perfil_nome,
@@ -337,12 +353,39 @@ class MatchingViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> responderPedido(String matchId, String novoStatus) async {
+  Future<bool> responderPedido(String matchId, String novoStatus, String musicoOrigemId) async {
+    final meuId = _supabase.auth.currentUser?.id;
     try {
       await _supabase
           .from('matchings')
           .update({'match_status': novoStatus})
           .eq('match_id', matchId);
+
+      if (meuId != null) {
+        final responsePerfil = await _supabase
+            .from('perfis_musicos')
+            .select('perfil_nome, perfil_telefone')
+            .eq('perfil_id', meuId)
+            .maybeSingle();
+            
+        final meuPerfil = responsePerfil as Map<String, dynamic>?;
+        
+        final String meuNome = (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';
+        
+        final String? meuTelefone = (novoStatus == 'ACEITO') 
+            ? (meuPerfil?['perfil_telefone'] as String?) 
+            : null;
+
+        final String mensagem = (novoStatus == 'ACEITO')
+            ? '$meuNome ACEITOU o seu pedido de conexão musical! Entre em contato.'
+            : '$meuNome RECUSOU o seu pedido de conexão.';
+
+        await _supabase.from('notificacoes').insert({
+          'perfil_id': musicoOrigemId,
+          'mensagem': mensagem,
+          'telefone_contato': meuTelefone,
+        });
+      }
 
       _pedidosRecebidos.removeWhere((p) => p['match_id'] == matchId);
       notifyListeners();

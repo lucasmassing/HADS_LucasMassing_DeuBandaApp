@@ -1,3 +1,4 @@
+import 'package:deubanda_app/viewmodels/notificacao_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,6 +26,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProfileViewModel()),
         ChangeNotifierProvider(create: (_) => ProjetoViewModel()),
         ChangeNotifierProvider(create: (_) => MatchingViewModel()),
+        ChangeNotifierProvider(create: (_) => NotificacaoViewModel()),
       ],
       child: const DeuBandaApp(),
     ),

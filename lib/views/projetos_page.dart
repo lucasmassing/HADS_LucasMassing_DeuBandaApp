@@ -5,6 +5,7 @@ import '../viewmodels/projeto_viewmodel.dart';
 import '../models/projeto.dart';
 import 'projeto_detalhes_page.dart';
 import 'notificacoes_page.dart';
+import '../viewmodels/notificacao_viewmodel.dart';
 
 class ProjetosPage extends StatefulWidget {
   const ProjetosPage({super.key});
@@ -21,7 +22,6 @@ class _ProjetosPageState extends State<ProjetosPage> {
       final viewModel = context.read<ProjetoViewModel>();
       viewModel.carregarProjetos();
       viewModel.carregarMinhasInscricoes();
-      viewModel.carregarNotificacoes();
     });
   }
 
@@ -254,62 +254,66 @@ class _ProjetosPageState extends State<ProjetosPage> {
         .toList();
 
     return DefaultTabController(
-      length: 2, // 2 Abas
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Mural de Vagas'),
           actions: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const NotificacoesPage(),
-                      ),
-                    ).then((_) {
-                      if (context.mounted) {
-                        context.read<ProjetoViewModel>().carregarNotificacoes();
-                      }
-                    });
-                  },
-                ),
-                if (viewModel.notificacoesNaoLidas > 0)
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '${viewModel.notificacoesNaoLidas}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+            Consumer<NotificacaoViewModel>(
+              builder: (context, notifViewModel, child) {
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const NotificacoesPage(),
+                          ),
+                        ).then((_) {
+                          if (context.mounted) {
+                            notifViewModel.carregarNotificacoes();
+                          }
+                        });
+                      },
                     ),
-                  ),
-              ],
+                    if (notifViewModel.notificacoesNaoLidas > 0)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            '${notifViewModel.notificacoesNaoLidas}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {
                 viewModel.carregarProjetos();
                 viewModel.carregarMinhasInscricoes();
-                viewModel.carregarNotificacoes();
+                context.read<NotificacaoViewModel>().carregarNotificacoes();
               },
             ),
           ],
@@ -459,7 +463,7 @@ class _ProjetosPageState extends State<ProjetosPage> {
                       final vm = context.read<ProjetoViewModel>();
                       vm.carregarProjetos();
                       vm.carregarMinhasInscricoes();
-                    }  
+                    }
                   });
                 },
                 child: const Text('Ver Detalhes'),

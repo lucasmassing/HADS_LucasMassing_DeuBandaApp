@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/matching_viewmodel.dart';
-import 'pedidos_conexao_page.dart';
+import '../viewmodels/notificacao_viewmodel.dart';
+import 'notificacoes_page.dart';
 
 class FeedPage extends StatelessWidget {
   const FeedPage({super.key});
@@ -14,20 +15,68 @@ class FeedPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Explorar Músicos'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PedidosConexaoPage(),
-                ),
+          Consumer<NotificacaoViewModel>(
+            builder: (context, notifViewModel, child) {
+              // Somamos os alertas não lidos com os pedidos pendentes
+              final totalAvisos =
+                  notifViewModel.notificacoesNaoLidas +
+                  viewModel.pedidosRecebidos.length;
+
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const NotificacoesPage(),
+                        ),
+                      ).then((_) {
+                        if (context.mounted) {
+                          notifViewModel.carregarNotificacoes();
+                          viewModel.carregarPedidosRecebidos();
+                        }
+                      });
+                    },
+                  ),
+                  if (totalAvisos > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$totalAvisos',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: viewModel.carregarFeed,
+            onPressed: () {
+              viewModel.carregarFeed();
+              context.read<NotificacaoViewModel>().carregarNotificacoes();
+              viewModel.carregarPedidosRecebidos();
+            },
           ),
         ],
       ),
