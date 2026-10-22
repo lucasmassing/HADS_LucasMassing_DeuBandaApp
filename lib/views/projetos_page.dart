@@ -1,3 +1,4 @@
+import 'package:deubanda_app/viewmodels/matching_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -244,6 +245,7 @@ class _ProjetosPageState extends State<ProjetosPage> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ProjetoViewModel>();
+    final matchViewModel = context.watch<MatchingViewModel>();
 
     // Extrai os IDs das vagas em que me inscrevi para não mostrar no mural
     final idsInscritos = viewModel.minhasInscricoes
@@ -261,11 +263,15 @@ class _ProjetosPageState extends State<ProjetosPage> {
           actions: [
             Consumer<NotificacaoViewModel>(
               builder: (context, notifViewModel, child) {
+                final totalAvisos =
+                    notifViewModel.notificacoesNaoLidas +
+                    matchViewModel.pedidosRecebidos.length;
+
                 return Stack(
                   alignment: Alignment.center,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.notifications),
+                      icon: const Icon(Icons.notifications_outlined),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -275,11 +281,12 @@ class _ProjetosPageState extends State<ProjetosPage> {
                         ).then((_) {
                           if (context.mounted) {
                             notifViewModel.carregarNotificacoes();
+                            matchViewModel.carregarPedidosRecebidos();
                           }
                         });
                       },
                     ),
-                    if (notifViewModel.notificacoesNaoLidas > 0)
+                    if (totalAvisos > 0)
                       Positioned(
                         right: 8,
                         top: 8,
@@ -294,7 +301,7 @@ class _ProjetosPageState extends State<ProjetosPage> {
                             minHeight: 16,
                           ),
                           child: Text(
-                            '${notifViewModel.notificacoesNaoLidas}',
+                            '$totalAvisos',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
