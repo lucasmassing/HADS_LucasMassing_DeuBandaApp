@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../viewmodels/matching_viewmodel.dart';
 import '../viewmodels/notificacao_viewmodel.dart';
 import 'notificacoes_page.dart';
+import 'minhas_conexoes_page.dart';
 
 class FeedPage extends StatelessWidget {
   const FeedPage({super.key});
@@ -15,12 +16,19 @@ class FeedPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Explorar Músicos'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.people_alt_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MinhasConexoesPage()),
+              );
+            },
+          ),
           Consumer<NotificacaoViewModel>(
             builder: (context, notifViewModel, child) {
-              // Somamos os alertas não lidos com os pedidos pendentes
-              final totalAvisos =
-                  notifViewModel.notificacoesNaoLidas +
-                  viewModel.pedidosRecebidos.length;
+              final totalAvisos = notifViewModel
+                  .notificacoesNaoLidas;
 
               return Stack(
                 alignment: Alignment.center,
@@ -36,7 +44,7 @@ class FeedPage extends StatelessWidget {
                       ).then((_) {
                         if (context.mounted) {
                           notifViewModel.carregarNotificacoes();
-                          viewModel.carregarPedidosRecebidos();
+                          viewModel.carregarMinhasConexoes();
                         }
                       });
                     },
@@ -75,7 +83,7 @@ class FeedPage extends StatelessWidget {
             onPressed: () {
               viewModel.carregarFeed();
               context.read<NotificacaoViewModel>().carregarNotificacoes();
-              viewModel.carregarPedidosRecebidos();
+              viewModel.carregarMinhasConexoes();
             },
           ),
         ],

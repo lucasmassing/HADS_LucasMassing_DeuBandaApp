@@ -232,7 +232,7 @@ class MatchingViewModel extends ChangeNotifier {
             scoreLogistico +
             scoreComportamental +
             scoreTecnico;
-        
+
         // Soma e guarda o score final (Máx 100)
         musico['match_score'] =
             scoreArtistico +
@@ -303,14 +303,16 @@ class MatchingViewModel extends ChangeNotifier {
           .select('perfil_nome')
           .eq('perfil_id', userId)
           .maybeSingle();
-          
+
       final meuPerfil = responsePerfil as Map<String, dynamic>?;
-      
-      final String meuNome = (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';
-      
+
+      final String meuNome =
+          (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';
+
       await _supabase.from('notificacoes').insert({
         'perfil_id': musicoDestinoId,
-        'mensagem': '$meuNome acabou de enviar um pedido de conexão! Verifique a aba de Notificações.',
+        'mensagem':
+            '$meuNome acabou de enviar um pedido de conexão! Verifique a aba de Notificações.',
       });
 
       _musicosFeed.removeWhere((m) => m['perfil_id'] == musicoDestinoId);
@@ -326,7 +328,10 @@ class MatchingViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> _pedidosRecebidos = [];
   List<Map<String, dynamic>> get pedidosRecebidos => _pedidosRecebidos;
 
-  Future<void> carregarPedidosRecebidos() async {
+  List<Map<String, dynamic>> _minhasConexoes = [];
+  List<Map<String, dynamic>> get minhasConexoes => _minhasConexoes;
+
+  Future<void> carregarMinhasConexoes() async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
 
@@ -335,25 +340,26 @@ class MatchingViewModel extends ChangeNotifier {
           .from('matchings')
           .select('''
             match_id,
-            musico_origem_id,
             match_status,
-            perfis_musicos!matchings_musico_origem_id_fkey (
-              perfil_nome,
-              perfil_cidade,
-              perfil_bio
-            )
+            musico_origem_id,
+            musico_destino_id,
+            origem:perfis_musicos!matchings_musico_origem_id_fkey(perfil_nome, perfil_cidade),
+            destino:perfis_musicos!matchings_musico_destino_id_fkey(perfil_nome, perfil_cidade)
           ''')
-          .eq('musico_destino_id', userId)
-          .eq('match_status', 'PENDENTE');
+          .or('musico_origem_id.eq.$userId,musico_destino_id.eq.$userId');
 
-      _pedidosRecebidos = List<Map<String, dynamic>>.from(data);
+      _minhasConexoes = List<Map<String, dynamic>>.from(data);
       notifyListeners();
     } catch (e) {
-      debugPrint('Erro ao carregar pedidos de conexão: $e');
+      debugPrint('Erro ao carregar minhas conexões: $e');
     }
   }
 
-  Future<bool> responderPedido(String matchId, String novoStatus, String musicoOrigemId) async {
+  Future<bool> responderPedido(
+    String matchId,
+    String novoStatus,
+    String musicoOrigemId,
+  ) async {
     final meuId = _supabase.auth.currentUser?.id;
     try {
       await _supabase
@@ -367,13 +373,14 @@ class MatchingViewModel extends ChangeNotifier {
             .select('perfil_nome, perfil_telefone')
             .eq('perfil_id', meuId)
             .maybeSingle();
-            
+
         final meuPerfil = responsePerfil as Map<String, dynamic>?;
-        
-        final String meuNome = (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';
-        
-        final String? meuTelefone = (novoStatus == 'ACEITO') 
-            ? (meuPerfil?['perfil_telefone'] as String?) 
+
+        final String meuNome =
+            (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';
+
+        final String? meuTelefone = (novoStatus == 'ACEITO')
+            ? (meuPerfil?['perfil_telefone'] as String?)
             : null;
 
         final String mensagem = (novoStatus == 'ACEITO')
@@ -387,8 +394,8 @@ class MatchingViewModel extends ChangeNotifier {
         });
       }
 
-      _pedidosRecebidos.removeWhere((p) => p['match_id'] == matchId);
       notifyListeners();
+      carregarMinhasConexoes();
       return true;
     } catch (e) {
       debugPrint('Erro ao responder pedido: $e');

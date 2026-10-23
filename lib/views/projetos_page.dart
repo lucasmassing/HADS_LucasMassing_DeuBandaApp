@@ -263,9 +263,7 @@ class _ProjetosPageState extends State<ProjetosPage> {
           actions: [
             Consumer<NotificacaoViewModel>(
               builder: (context, notifViewModel, child) {
-                final totalAvisos =
-                    notifViewModel.notificacoesNaoLidas +
-                    matchViewModel.pedidosRecebidos.length;
+                final totalAvisos = notifViewModel.notificacoesNaoLidas;
 
                 return Stack(
                   alignment: Alignment.center,
@@ -281,7 +279,6 @@ class _ProjetosPageState extends State<ProjetosPage> {
                         ).then((_) {
                           if (context.mounted) {
                             notifViewModel.carregarNotificacoes();
-                            matchViewModel.carregarPedidosRecebidos();
                           }
                         });
                       },
