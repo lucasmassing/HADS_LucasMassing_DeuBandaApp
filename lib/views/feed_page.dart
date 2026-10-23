@@ -16,19 +16,60 @@ class FeedPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Explorar Músicos'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.people_alt_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MinhasConexoesPage()),
+          Consumer<MatchingViewModel>(
+            builder: (context, matchViewModel, child) {
+              final totalConvites = matchViewModel.quantidadeConvitesPendentes;
+
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.people_alt_outlined),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MinhasConexoesPage(),
+                        ),
+                      ).then((_) {
+                        if (context.mounted) {
+                          matchViewModel.carregarMinhasConexoes();
+                        }
+                      });
+                    },
+                  ),
+                  if (totalConvites > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          '$totalConvites',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),
           Consumer<NotificacaoViewModel>(
             builder: (context, notifViewModel, child) {
-              final totalAvisos = notifViewModel
-                  .notificacoesNaoLidas;
+              final totalAvisos = notifViewModel.notificacoesNaoLidas;
 
               return Stack(
                 alignment: Alignment.center,

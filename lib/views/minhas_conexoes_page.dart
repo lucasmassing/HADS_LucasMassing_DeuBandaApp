@@ -49,6 +49,16 @@ class _MinhasConexoesPageState extends State<MinhasConexoesPage> {
               : conexao['origem'];
           final status = conexao['match_status'];
 
+          Color corStatus;
+          if (status == 'PENDENTE') {
+            corStatus = Colors
+                .orange;
+          } else if (status == 'ACEITO') {
+            corStatus = Colors.green;
+          } else {
+            corStatus = Colors.red;
+          }
+
           return ListTile(
             leading: const CircleAvatar(
               backgroundColor: Colors.deepPurple,
@@ -83,9 +93,24 @@ class _MinhasConexoesPageState extends State<MinhasConexoesPage> {
                       ),
                     ],
                   )
-                : Text(
-                    status,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                : Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: corStatus.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: corStatus.withOpacity(0.5)),
+                    ),
+                    child: Text(
+                      status,
+                      style: TextStyle(
+                        color: corStatus,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
           );
         },

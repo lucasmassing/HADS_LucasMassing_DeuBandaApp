@@ -331,6 +331,19 @@ class MatchingViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> _minhasConexoes = [];
   List<Map<String, dynamic>> get minhasConexoes => _minhasConexoes;
 
+  int get quantidadeConvitesPendentes {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return 0;
+
+    return _minhasConexoes
+        .where(
+          (c) =>
+              c['match_status'] == 'PENDENTE' &&
+              c['musico_destino_id'] == userId,
+        )
+        .length;
+  }
+
   Future<void> carregarMinhasConexoes() async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
