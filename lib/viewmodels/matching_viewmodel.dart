@@ -99,6 +99,22 @@ class MatchingViewModel extends ChangeNotifier {
           .map<String>((d) => '${d['dia_semana']}-${d['turno']}')
           .toSet();
 
+      // Busca as conexões já existentes para ocultá-las do feed ---
+      final matchingsData = await _supabase
+          .from('matchings')
+          .select('musico_origem_id, musico_destino_id')
+          .or('musico_origem_id.eq.$userId,musico_destino_id.eq.$userId');
+
+      Set<String> idsExcluidos = {};
+      for (var match in matchingsData as List) {
+        if (match['musico_origem_id'] != userId) {
+          idsExcluidos.add(match['musico_origem_id']);
+        }
+        if (match['musico_destino_id'] != userId) {
+          idsExcluidos.add(match['musico_destino_id']);
+        }
+      }
+
       // 2. Busca todos os outros músicos
       final data = await _supabase
           .from('perfis_musicos')
@@ -120,7 +136,7 @@ class MatchingViewModel extends ChangeNotifier {
 
       List<Map<String, dynamic>> listaMusicos = List<Map<String, dynamic>>.from(
         data,
-      );
+      ).where((musico) => !idsExcluidos.contains(musico['perfil_id'])).toList();
 
       // 3. Motor de Cálculo de Afinidade (4 Dimensões)
       for (var musico in listaMusicos) {
