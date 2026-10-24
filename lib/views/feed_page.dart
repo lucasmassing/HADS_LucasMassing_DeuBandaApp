@@ -5,8 +5,28 @@ import '../viewmodels/notificacao_viewmodel.dart';
 import 'notificacoes_page.dart';
 import 'minhas_conexoes_page.dart';
 
-class FeedPage extends StatelessWidget {
+class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
+
+  @override
+  State<FeedPage> createState() => _FeedPageState();
+}
+
+class _FeedPageState extends State<FeedPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final viewModel = context.read<MatchingViewModel>();
+        final notifViewModel = context.read<NotificacaoViewModel>();
+
+        viewModel.carregarFeed();
+        notifViewModel.carregarNotificacoes();
+        viewModel.carregarMinhasConexoes();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
