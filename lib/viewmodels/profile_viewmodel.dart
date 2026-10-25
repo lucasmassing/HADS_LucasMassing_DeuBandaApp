@@ -192,6 +192,7 @@ class ProfileViewModel extends ChangeNotifier {
       _meusInstrumentos = (data as List)
           .map((json) => MusicoInstrumento.fromJson(json))
           .toList();
+      notifyListeners();
     } catch (e) {
       debugPrint('Erro ao carregar meus instrumentos: $e');
     }

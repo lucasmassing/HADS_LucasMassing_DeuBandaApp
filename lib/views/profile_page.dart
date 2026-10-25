@@ -5,6 +5,7 @@ import '../viewmodels/profile_viewmodel.dart';
 import '../models/perfil_musico.dart';
 import 'login_page.dart';
 import 'home_page.dart';
+import 'dart:async';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -22,6 +23,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final _telefoneController = TextEditingController();
 
   bool _dadosIniciaisPreenchidos = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -34,23 +36,33 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  Future<void> _salvarDados() async {
-    if (!_formKey.currentState!.validate()) return;
+  void _mostrarMensagemSalvo() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Dados salvos com sucesso!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
 
+  Future<void> _autoSalvar({bool mostrarAviso = false}) async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
 
     final viewModel = context.read<ProfileViewModel>();
-
     final perfil = PerfilMusico(
       perfilId: userId,
-      perfilNome: _nomeController.text.trim(),
+      perfilNome: _nomeController.text.trim().isEmpty
+          ? 'Sem Nome'
+          : _nomeController.text.trim(),
       perfilBio: _bioController.text.trim(),
       perfilCoordenadas: null,
       perfilCidade: viewModel.cidadeEstado,
       perfilObjetivo: viewModel.objetivosSelecionados.join(', '),
-      perfilArtistaReferencia:
-          null, // Deixamos nulo aqui pois o salvamento é automático no model
+      perfilArtistaReferencia: null,
     );
 
     final sucesso = await viewModel.salvarPerfil(
@@ -58,27 +70,18 @@ class _ProfilePageState extends State<ProfilePage> {
       _telefoneController.text.trim(),
     );
 
-    if (!mounted) return;
-
-    if (sucesso) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Perfil atualizado com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(viewModel.errorMessage ?? 'Erro ao salvar o perfil.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (mostrarAviso && sucesso) {
+      _mostrarMensagemSalvo();
     }
+  }
+
+  void _aoDigitar(String value) {
+    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    _debounceTimer = Timer(const Duration(seconds: 1), () {
+      _autoSalvar(
+        mostrarAviso: true,
+      ); // Salva em silêncio 1 segundo após parar de digitar
+    });
   }
 
   Future<void> _sair() async {
@@ -260,6 +263,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             generoSelecionado!,
                             isPrioritario,
                           );
+                          _mostrarMensagemSalvo();
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -318,6 +322,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 16),
                       TextFormField(
                         controller: _nomeController,
                         decoration: const InputDecoration(
@@ -325,6 +330,11 @@ class _ProfilePageState extends State<ProfilePage> {
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.person),
                         ),
+                        onChanged: _aoDigitar,
+                        onEditingComplete: () {
+                          FocusScope.of(context).unfocus();
+                          _autoSalvar(mostrarAviso: true);
+                        },
                         validator: (v) =>
                             v!.isEmpty ? 'Campo obrigatório' : null,
                       ),
@@ -336,10 +346,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           labelText: 'Biografia',
                           border: OutlineInputBorder(),
                         ),
+                        onChanged: _aoDigitar,
+                        onEditingComplete: () {
+                          FocusScope.of(context).unfocus();
+                          _autoSalvar();
+                        },
                       ),
                       const SizedBox(height: 16),
-
-                      // Campo de Telefone
                       TextFormField(
                         controller: _telefoneController,
                         keyboardType: TextInputType.phone,
@@ -348,9 +361,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.phone),
                         ),
+                        onChanged: _aoDigitar,
+                        onEditingComplete: () {
+                          FocusScope.of(context).unfocus();
+                          _autoSalvar();
+                        },
                       ),
                       const SizedBox(height: 16),
-
                       // Campo de CEP
                       Autocomplete<String>(
                         initialValue: TextEditingValue(
@@ -367,6 +384,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                         onSelected: (String selection) {
                           viewModel.setCidadeEstado(selection);
+                          _autoSalvar(mostrarAviso: true);
                         },
                         fieldViewBuilder:
                             (context, controller, focusNode, onFieldSubmitted) {
@@ -441,30 +459,12 @@ class _ProfilePageState extends State<ProfilePage> {
                               activeColor: Colors.deepPurple,
                               controlAffinity: ListTileControlAffinity.leading,
                               dense: true,
-                              onChanged: (bool? selected) =>
-                                  viewModel.alternarObjetivo(objetivo),
+                              onChanged: (bool? selected) {
+                                viewModel.alternarObjetivo(objetivo);
+                                _autoSalvar(mostrarAviso: true);
+                              },
                             );
                           }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: viewModel.isLoading ? null : _salvarDados,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: viewModel.isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'Salvar Dados Básicos',
-                                  style: TextStyle(fontSize: 16),
-                                ),
                         ),
                       ),
                     ],
@@ -523,8 +523,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                     top: 0,
                                     right: 0,
                                     child: InkWell(
-                                      onTap: () =>
-                                          viewModel.removerArtista(name),
+                                      onTap: () {
+                                        viewModel.removerArtista(name);
+                                        _mostrarMensagemSalvo();
+                                      },
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
                                         decoration: const BoxDecoration(
@@ -574,6 +576,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onSelected: (Map<String, String> selection) {
                       viewModel.adicionarArtista(selection);
                       _referenciaController.clear();
+                      _mostrarMensagemSalvo();
                     },
                     fieldViewBuilder:
                         (
@@ -714,9 +717,20 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => viewModel.removerInstrumento(
-                              item.instrumentoId,
-                            ),
+                            onPressed: () async {
+                              final sucesso = await viewModel
+                                  .removerInstrumento(item.instrumentoId);
+                              if (sucesso && context.mounted) {
+                                _mostrarMensagemSalvo();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Dados salvos com sucesso!'),
+                                    backgroundColor: Colors.green,
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ),
                       );
@@ -787,8 +801,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () =>
-                                viewModel.removerGenero(item['genero_id']),
+                            onPressed: () async {
+                              final sucesso = await viewModel.removerGenero(
+                                item['genero_id'],
+                              );
+                              if (sucesso) {
+                                _mostrarMensagemSalvo();
+                              }
+                            },
                           ),
                         ),
                       );
@@ -866,7 +886,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     final isSelecionado = viewModel.horariosDisponiveis
                         .contains('$dia-$turno');
                     return InkWell(
-                      onTap: () => viewModel.alternarHorario(dia, turno),
+                      onTap: () async {
+                        await viewModel.alternarHorario(dia, turno);
+                        _mostrarMensagemSalvo();
+                      },
                       child: Container(
                         color: isSelecionado
                             ? Colors.deepPurple
