@@ -6,6 +6,7 @@ import '../models/perfil_musico.dart';
 import 'login_page.dart';
 import 'home_page.dart';
 import 'dart:async';
+import '../viewmodels/matching_viewmodel.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -24,6 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool _dadosIniciaisPreenchidos = false;
   Timer? _debounceTimer;
+  bool _isCadastro = false;
 
   @override
   void initState() {
@@ -292,9 +294,24 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     if (!_dadosIniciaisPreenchidos && viewModel.perfil != null) {
-      _nomeController.text = viewModel.perfil!.perfilNome;
+      _nomeController.text = viewModel.perfil!.perfilNome == 'Sem Nome'
+          ? ''
+          : viewModel.perfil!.perfilNome;
       _bioController.text = viewModel.perfil!.perfilBio ?? '';
       _telefoneController.text = viewModel.telefone ?? '';
+
+      _isCadastro =
+          _nomeController.text.trim().isEmpty ||
+          _bioController.text.trim().isEmpty ||
+          _telefoneController.text.trim().isEmpty ||
+          viewModel.cidadeEstado == null ||
+          viewModel.cidadeEstado!.isEmpty ||
+          viewModel.objetivosSelecionados.isEmpty ||
+          viewModel.meusInstrumentos.isEmpty ||
+          viewModel.meusGeneros.isEmpty ||
+          viewModel.artistasSelecionados.isEmpty ||
+          viewModel.horariosDisponiveis.isEmpty;
+
       _dadosIniciaisPreenchidos = true;
     }
 
@@ -816,6 +833,63 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 const SizedBox(height: 24),
                 _buildGradeHoraria(context, viewModel),
+
+                if (_isCadastro) ...[
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        if (_nomeController.text.trim().isEmpty ||
+                            _bioController.text.trim().isEmpty ||
+                            _telefoneController.text.trim().isEmpty ||
+                            viewModel.cidadeEstado == null ||
+                            viewModel.cidadeEstado!.isEmpty ||
+                            viewModel.objetivosSelecionados.isEmpty ||
+                            viewModel.meusInstrumentos.isEmpty ||
+                            viewModel.meusGeneros.isEmpty ||
+                            viewModel.artistasSelecionados.isEmpty ||
+                            viewModel.horariosDisponiveis.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Preencha todos os campos, adicione instrumentos, referências e horários para explorar!',
+                              ),
+                              backgroundColor: Colors.red,
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
+                          return;
+                        }
+
+                        context.read<MatchingViewModel>().carregarFeed();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomePage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.rocket_launch),
+                      label: const Text(
+                        'Concluir e Explorar Músicos',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ],
             ),
           ),
