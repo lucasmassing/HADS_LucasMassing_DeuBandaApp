@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../viewmodels/matching_viewmodel.dart';
+import 'perfil_visita_page.dart';
 
 class MinhasConexoesPage extends StatefulWidget {
   const MinhasConexoesPage({super.key});
@@ -51,8 +52,7 @@ class _MinhasConexoesPageState extends State<MinhasConexoesPage> {
 
           Color corStatus;
           if (status == 'PENDENTE') {
-            corStatus = Colors
-                .orange;
+            corStatus = Colors.orange;
           } else if (status == 'ACEITO') {
             corStatus = Colors.green;
           } else {
@@ -60,6 +60,14 @@ class _MinhasConexoesPageState extends State<MinhasConexoesPage> {
           }
 
           return ListTile(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PerfilVisitaPage(musico: outroPerfil),
+                ),
+              );
+            },
             leading: const CircleAvatar(
               backgroundColor: Colors.deepPurple,
               child: Icon(Icons.person, color: Colors.white),

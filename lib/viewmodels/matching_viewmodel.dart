@@ -31,6 +31,25 @@ class MatchingViewModel extends ChangeNotifier {
     return soma / instrumentos.length;
   }
 
+  void _formatarDadosParaVisita(Map<String, dynamic> musico) {
+    final refTexto = musico['perfil_artista_referencia'] ?? '';
+    List decodedArtistas = [];
+    if (refTexto.isNotEmpty) {
+      try {
+        decodedArtistas = json.decode(refTexto);
+      } catch (e) {
+        debugPrint('Erro ao decodificar artistas: $e');
+      }
+    }
+    musico['artistas_referencia'] = decodedArtistas;
+
+    // Converte disponibilidade para o formato que a tela espera
+    final disp = musico['disponibilidade_semanal'] as List? ?? [];
+    musico['musico_horarios'] = disp.map((d) {
+      return {'dia_turno': '${d['dia_semana']} - ${d['turno']}'};
+    }).toList();
+  }
+
   Future<void> carregarFeed() async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
@@ -123,13 +142,18 @@ class MatchingViewModel extends ChangeNotifier {
             perfil_nome, 
             perfil_cidade, 
             perfil_bio, 
+            perfil_telefone,
             perfil_artista_referencia,
             perfil_objetivo,
             musico_instrumentos (
               instrumento_nivel, 
               instrumentos(instrumento_nome)
             ),
-            musico_generos (genero_id),
+            musico_generos (
+              genero_id,
+              is_prioritario,
+              generos_musicais(genero_nome)
+            ),
             disponibilidade_semanal (dia_semana, turno)
           ''')
           .neq('perfil_id', userId);
@@ -140,6 +164,7 @@ class MatchingViewModel extends ChangeNotifier {
 
       // 3. Motor de Cálculo de Afinidade (4 Dimensões)
       for (var musico in listaMusicos) {
+        _formatarDadosParaVisita(musico);
         int scoreArtistico = 0;
         int scoreLogistico = 0;
         int scoreComportamental = 0;
@@ -372,12 +397,33 @@ class MatchingViewModel extends ChangeNotifier {
             match_status,
             musico_origem_id,
             musico_destino_id,
-            origem:perfis_musicos!matchings_musico_origem_id_fkey(perfil_nome, perfil_cidade),
-            destino:perfis_musicos!matchings_musico_destino_id_fkey(perfil_nome, perfil_cidade)
+            origem:perfis_musicos!matchings_musico_origem_id_fkey(
+              perfil_id, perfil_nome, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
+              musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
+              musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
+              disponibilidade_semanal(dia_semana, turno)
+            ),
+            destino:perfis_musicos!matchings_musico_destino_id_fkey(
+              perfil_id, perfil_nome, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
+              musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
+              musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
+              disponibilidade_semanal(dia_semana, turno)
+            )
           ''')
           .or('musico_origem_id.eq.$userId,musico_destino_id.eq.$userId');
 
-      _minhasConexoes = List<Map<String, dynamic>>.from(data);
+      final listConexoes = List<Map<String, dynamic>>.from(data);
+      
+      for (var conexao in listConexoes) {
+        if (conexao['origem'] != null) {
+          _formatarDadosParaVisita(conexao['origem'] as Map<String, dynamic>);
+        }
+        if (conexao['destino'] != null) {
+          _formatarDadosParaVisita(conexao['destino'] as Map<String, dynamic>);
+        }
+      }
+
+      _minhasConexoes = listConexoes;
       notifyListeners();
     } catch (e) {
       debugPrint('Erro ao carregar minhas conexões: $e');
