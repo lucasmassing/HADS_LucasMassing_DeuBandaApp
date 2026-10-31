@@ -361,6 +361,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         maxLines: 3,
                         decoration: const InputDecoration(
                           labelText: 'Biografia',
+                          hintText:
+                              'Fale um pouco sobre a sua jornada musical, influências e o que procura (ex: formar banda, fazer jam...)',
+                          helperText:
+                              'Seja autêntico! Uma boa biografia atrai melhores conexões.',
                           border: OutlineInputBorder(),
                         ),
                         onChanged: _aoDigitar,
