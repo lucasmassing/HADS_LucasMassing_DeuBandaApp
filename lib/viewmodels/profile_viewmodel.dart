@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../models/perfil_musico.dart';
 import '../models/instrumento.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
@@ -59,6 +61,12 @@ class ProfileViewModel extends ChangeNotifier {
 
   String? _telefone;
   String? get telefone => _telefone;
+
+  String? _fotoPerfil;
+  String? get fotoPerfil => _fotoPerfil;
+
+  List<String> _fotosGaleria = [];
+  List<String> get fotosGaleria => _fotosGaleria;
 
   ProfileViewModel() {
     _inicializarDados();
@@ -145,6 +153,18 @@ class ProfileViewModel extends ChangeNotifier {
         _telefone = data['perfil_telefone'];
         _cidadeEstado = _perfil!.perfilCidade;
 
+        final fotoUrl = data['foto_perfil'] as String?;
+        if (fotoUrl != null && fotoUrl.trim().isNotEmpty) {
+          _fotoPerfil = fotoUrl;
+        } else {
+          _fotoPerfil = null;
+        }
+
+        final galeriaData = data['fotos_galeria'];
+        _fotosGaleria = galeriaData != null
+            ? List<String>.from(galeriaData)
+            : [];
+
         final objTexto = data['perfil_objetivo'] ?? '';
         if (objTexto.isNotEmpty) {
           _objetivosSelecionados = objTexto.split(', ');
@@ -152,7 +172,6 @@ class ProfileViewModel extends ChangeNotifier {
           _objetivosSelecionados = [];
         }
 
-        // --- CONVERSÃO DA REFERÊNCIA (JSON COM FOTOS) ---
         final refTexto = data['perfil_artista_referencia'] ?? '';
         if (refTexto.isNotEmpty) {
           try {
@@ -255,6 +274,9 @@ class ProfileViewModel extends ChangeNotifier {
       jsonParaSalvar['perfil_telefone'] = telefone;
 
       jsonParaSalvar.remove('perfil_artista_referencia');
+
+      jsonParaSalvar['foto_perfil'] = _fotoPerfil;
+      jsonParaSalvar['fotos_galeria'] = _fotosGaleria;
 
       await _supabase.from('perfis_musicos').upsert(jsonParaSalvar);
       _perfil = perfilAtualizado;
@@ -458,6 +480,99 @@ class ProfileViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('Erro ao carregar cidades do IBGE: $e');
+    }
+  }
+
+  //Métodos para upload de imagens
+  Future<String?> _uploadImagemStorage(XFile file, String pasta) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) return null;
+
+      final extensao = file.name.split('.').last;
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extensao';
+      final path = '$userId/$pasta/$fileName';
+
+      final bytes = await file.readAsBytes();
+
+      await _supabase.storage
+          .from('fotos_musicos')
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(contentType: 'image/$extensao'),
+          );
+
+      return _supabase.storage.from('fotos_musicos').getPublicUrl(path);
+    } catch (e) {
+      debugPrint('Erro ao fazer upload da imagem: $e');
+      return null;
+    }
+  }
+
+  Future<bool> atualizarFotoPerfil(XFile imageFile) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final imageUrl = await _uploadImagemStorage(imageFile, 'perfil');
+      if (imageUrl != null) {
+        final userId = _supabase.auth.currentUser!.id;
+        await _supabase
+            .from('perfis_musicos')
+            .update({'foto_perfil': imageUrl})
+            .eq('perfil_id', userId);
+        _fotoPerfil = imageUrl;
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> adicionarFotoGaleria(XFile imageFile) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final imageUrl = await _uploadImagemStorage(imageFile, 'galeria');
+      if (imageUrl != null) {
+        final userId = _supabase.auth.currentUser!.id;
+        _fotosGaleria.add(imageUrl);
+        await _supabase
+            .from('perfis_musicos')
+            .update({'fotos_galeria': _fotosGaleria})
+            .eq('perfil_id', userId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> removerFotoGaleria(String imageUrl) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final userId = _supabase.auth.currentUser!.id;
+      _fotosGaleria.remove(imageUrl);
+      await _supabase
+          .from('perfis_musicos')
+          .update({'fotos_galeria': _fotosGaleria})
+          .eq('perfil_id', userId);
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao remover foto: $e');
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 }

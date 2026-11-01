@@ -7,6 +7,7 @@ import 'login_page.dart';
 import 'home_page.dart';
 import 'dart:async';
 import '../viewmodels/matching_viewmodel.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -26,6 +27,24 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _dadosIniciaisPreenchidos = false;
   Timer? _debounceTimer;
   bool _isCadastro = false;
+
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _escolherEAtualizarFotoPerfil() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final viewModel = context.read<ProfileViewModel>();
+      await viewModel.atualizarFotoPerfil(pickedFile);
+    }
+  }
+
+  Future<void> _escolherEAdicionarFotoGaleria() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final viewModel = context.read<ProfileViewModel>();
+      await viewModel.adicionarFotoGaleria(pickedFile);
+    }
+  }
 
   @override
   void initState() {
@@ -340,6 +359,49 @@ class _ProfilePageState extends State<ProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 16),
+                      Center(
+                        child: Stack(
+                          children: [
+                            CircleAvatar(
+                              radius: 65,
+                              backgroundColor: Colors.deepPurple.shade50,
+                              backgroundImage:
+                                  (viewModel.fotoPerfil != null &&
+                                      viewModel.fotoPerfil!.isNotEmpty)
+                                  ? NetworkImage(viewModel.fotoPerfil!)
+                                  : null,
+                              child:
+                                  (viewModel.fotoPerfil == null ||
+                                      viewModel.fotoPerfil!.isEmpty)
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 65,
+                                      color: Colors.grey,
+                                    )
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: CircleAvatar(
+                                backgroundColor: Colors.deepPurple,
+                                radius: 22,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: viewModel.isLoading
+                                      ? null
+                                      : _escolherEAtualizarFotoPerfil,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       TextFormField(
                         controller: _nomeController,
                         decoration: const InputDecoration(
@@ -362,7 +424,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         decoration: const InputDecoration(
                           labelText: 'Biografia',
                           hintText:
-                              'Fale um pouco sobre a sua jornada musical, influências e o que procura (ex: formar banda, fazer jam...)',
+                              'Fale um pouco sobre a sua jornada musical...',
                           helperText:
                               'Seja autêntico! Uma boa biografia atrai melhores conexões.',
                           border: OutlineInputBorder(),
@@ -373,7 +435,89 @@ class _ProfilePageState extends State<ProfilePage> {
                           _autoSalvar();
                         },
                       ),
+
+                      const SizedBox(height: 32),
+                      const Divider(thickness: 1),
                       const SizedBox(height: 16),
+
+                      const Text(
+                        'Galeria (Você tocando)',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: viewModel.fotosGaleria.length + 1,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                        itemBuilder: (context, index) {
+                          if (index == viewModel.fotosGaleria.length) {
+                            return InkWell(
+                              onTap: viewModel.isLoading
+                                  ? null
+                                  : _escolherEAdicionarFotoGaleria,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.deepPurple.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.deepPurple.shade200,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.add_a_photo,
+                                  color: Colors.deepPurple,
+                                ),
+                              ),
+                            );
+                          }
+                          final url = viewModel.fotosGaleria[index];
+                          return Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  url,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                              Positioned(
+                                top: -4,
+                                right: -4,
+                                child: IconButton(
+                                  onPressed: () =>
+                                      viewModel.removerFotoGaleria(url),
+                                  icon: const CircleAvatar(
+                                    radius: 12,
+                                    backgroundColor: Colors.red,
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      const Divider(thickness: 1),
+                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
+
                       TextFormField(
                         controller: _telefoneController,
                         keyboardType: TextInputType.phone,
