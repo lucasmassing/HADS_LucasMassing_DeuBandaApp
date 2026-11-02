@@ -188,7 +188,9 @@ class _ProfilePageState extends State<ProfilePage> {
                             instrumentoSelecionado!,
                             nivelSelecionado,
                           );
-                          if (!sucesso && mounted) {
+                          if (sucesso) {
+                            _mostrarMensagemSalvo();
+                          } else if (!sucesso && mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(viewModel.errorMessage ?? 'Erro'),
@@ -886,14 +888,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               final sucesso = await viewModel
                                   .removerInstrumento(item.instrumentoId);
                               if (sucesso && context.mounted) {
-                                _mostrarMensagemSalvo();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Dados salvos com sucesso!'),
-                                    backgroundColor: Colors.green,
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
+                                _mostrarMensagemSalvo(); // Deixe apenas a chamada do método padrão
                               }
                             },
                           ),
