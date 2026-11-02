@@ -138,24 +138,25 @@ class MatchingViewModel extends ChangeNotifier {
       final data = await _supabase
           .from('perfis_musicos')
           .select('''
-            perfil_id, 
-            perfil_nome, 
-            perfil_cidade, 
-            perfil_bio, 
-            perfil_telefone,
-            perfil_artista_referencia,
-            perfil_objetivo,
-            musico_instrumentos (
-              instrumento_nivel, 
-              instrumentos(instrumento_nome)
-            ),
-            musico_generos (
-              genero_id,
-              is_prioritario,
-              generos_musicais(genero_nome)
-            ),
-            disponibilidade_semanal (dia_semana, turno)
-          ''')
+        perfil_id, 
+        perfil_nome, 
+        foto_perfil, 
+        perfil_cidade, 
+        perfil_bio, 
+        perfil_telefone,
+        perfil_artista_referencia,
+        perfil_objetivo,
+        musico_instrumentos (
+          instrumento_nivel, 
+          instrumentos(instrumento_nome)
+        ),
+        musico_generos (
+          genero_id,
+          is_prioritario,
+          generos_musicais(genero_nome)
+        ),
+        disponibilidade_semanal (dia_semana, turno)
+      ''')
           .neq('perfil_id', userId);
 
       List<Map<String, dynamic>> listaMusicos = List<Map<String, dynamic>>.from(
@@ -393,27 +394,27 @@ class MatchingViewModel extends ChangeNotifier {
       final data = await _supabase
           .from('matchings')
           .select('''
-            match_id,
-            match_status,
-            musico_origem_id,
-            musico_destino_id,
-            origem:perfis_musicos!matchings_musico_origem_id_fkey(
-              perfil_id, perfil_nome, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
-              musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
-              musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
-              disponibilidade_semanal(dia_semana, turno)
-            ),
-            destino:perfis_musicos!matchings_musico_destino_id_fkey(
-              perfil_id, perfil_nome, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
-              musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
-              musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
-              disponibilidade_semanal(dia_semana, turno)
-            )
-          ''')
+        match_id,
+        match_status,
+        musico_origem_id,
+        musico_destino_id,
+        origem:perfis_musicos!matchings_musico_origem_id_fkey(
+          perfil_id, perfil_nome, foto_perfil, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
+          musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
+          musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
+          disponibilidade_semanal(dia_semana, turno)
+        ),
+        destino:perfis_musicos!matchings_musico_destino_id_fkey(
+          perfil_id, perfil_nome, foto_perfil, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
+          musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
+          musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
+          disponibilidade_semanal(dia_semana, turno)
+        )
+      ''')
           .or('musico_origem_id.eq.$userId,musico_destino_id.eq.$userId');
 
       final listConexoes = List<Map<String, dynamic>>.from(data);
-      
+
       for (var conexao in listConexoes) {
         if (conexao['origem'] != null) {
           _formatarDadosParaVisita(conexao['origem'] as Map<String, dynamic>);

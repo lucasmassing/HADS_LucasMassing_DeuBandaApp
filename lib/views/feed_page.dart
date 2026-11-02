@@ -202,14 +202,27 @@ class _FeedPageState extends State<FeedPage> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const CircleAvatar(
+                              CircleAvatar(
                                 radius: 30,
-                                backgroundColor: Colors.deepPurple,
-                                child: Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
+                                backgroundColor: Colors.deepPurple.shade50,
+                                backgroundImage:
+                                    (musico['foto_perfil'] != null &&
+                                        musico['foto_perfil']
+                                            .toString()
+                                            .isNotEmpty)
+                                    ? NetworkImage(musico['foto_perfil'])
+                                    : null,
+                                child:
+                                    (musico['foto_perfil'] == null ||
+                                        musico['foto_perfil']
+                                            .toString()
+                                            .isEmpty)
+                                    ? const Icon(
+                                        Icons.person,
+                                        color: Colors.grey,
+                                        size: 30,
+                                      )
+                                    : null,
                               ),
                               const SizedBox(width: 16),
                               Expanded(
