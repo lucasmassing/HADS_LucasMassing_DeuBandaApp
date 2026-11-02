@@ -141,6 +141,7 @@ class MatchingViewModel extends ChangeNotifier {
         perfil_id, 
         perfil_nome, 
         foto_perfil, 
+        fotos_galeria, 
         perfil_cidade, 
         perfil_bio, 
         perfil_telefone,
@@ -399,13 +400,13 @@ class MatchingViewModel extends ChangeNotifier {
         musico_origem_id,
         musico_destino_id,
         origem:perfis_musicos!matchings_musico_origem_id_fkey(
-          perfil_id, perfil_nome, foto_perfil, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
+          perfil_id, perfil_nome, foto_perfil, fotos_galeria, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
           musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
           musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
           disponibilidade_semanal(dia_semana, turno)
         ),
         destino:perfis_musicos!matchings_musico_destino_id_fkey(
-          perfil_id, perfil_nome, foto_perfil, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
+          perfil_id, perfil_nome, foto_perfil, fotos_galeria, perfil_cidade, perfil_bio, perfil_objetivo, perfil_telefone, perfil_artista_referencia,
           musico_instrumentos(instrumento_nivel, instrumentos(instrumento_nome)),
           musico_generos(genero_id, is_prioritario, generos_musicais(genero_nome)),
           disponibilidade_semanal(dia_semana, turno)

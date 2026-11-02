@@ -15,6 +15,11 @@ class PerfilVisitaPage extends StatelessWidget {
     final telefone = musico['perfil_telefone'] ?? musico['telefone'];
     final bio = musico['perfil_bio']?.toString().trim() ?? '';
     final objetivo = musico['perfil_objetivo']?.toString().trim() ?? '';
+    final fotosGaleria =
+        (musico['fotos_galeria'] as List<dynamic>?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -57,6 +62,10 @@ class PerfilVisitaPage extends StatelessWidget {
                     _buildAgenda(horariosMap),
                     const SizedBox(height: 32),
                   ],
+                  if (fotosGaleria.isNotEmpty) ...[
+                    _buildGaleria(fotosGaleria),
+                    const SizedBox(height: 24),
+                  ],
                 ],
               ),
             ),
@@ -87,10 +96,19 @@ class PerfilVisitaPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 55,
-            backgroundColor: Colors.deepPurple,
-            child: Icon(Icons.person, color: Colors.white, size: 50),
+            backgroundColor: Colors.deepPurple.shade50,
+            backgroundImage:
+                (musico['foto_perfil'] != null &&
+                    musico['foto_perfil'].toString().isNotEmpty)
+                ? NetworkImage(musico['foto_perfil'])
+                : null,
+            child:
+                (musico['foto_perfil'] == null ||
+                    musico['foto_perfil'].toString().isEmpty)
+                ? const Icon(Icons.person, color: Colors.grey, size: 50)
+                : null,
           ),
           const SizedBox(height: 16),
           Text(
@@ -388,6 +406,49 @@ class PerfilVisitaPage extends StatelessWidget {
               ),
             );
           }).toList(),
+        ),
+      ],
+    );
+  }
+
+  // --- GALERIA DE FOTOS ---
+  Widget _buildGaleria(List<String> fotos) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 8.0, bottom: 12.0),
+          child: Text(
+            'Galeria de Fotos',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        SizedBox(
+          height: 150,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: fotos.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    fotos[index],
+                    height: 150,
+                    width: 150,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 150,
+                      width: 150,
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
