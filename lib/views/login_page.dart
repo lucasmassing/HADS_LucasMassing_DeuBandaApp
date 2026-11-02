@@ -5,6 +5,8 @@ import '../viewmodels/auth_viewmodel.dart';
 import 'register_page.dart';
 import 'profile_page.dart';
 import 'home_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'estudio_form_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -31,34 +33,44 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (sucesso) {
-      
-      await Provider.of<ProfileViewModel>(context, listen: false).carregarPerfil();
+      final user = Supabase.instance.client.auth.currentUser;
+      final tipoPerfil = user?.userMetadata?['tipo_perfil'] ?? 'Músico';
 
-      // Após o login dar certo, verifica se já tem perfil
-      final temPerfil = await authViewModel.verificarPerfilExistente();
-
-      if (!mounted) return;
-
-      if (temPerfil) {
-        // Se já tem perfil, vai direto para a Home
+      if (tipoPerfil == 'Dono de Estúdio') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-      } else {
-        // Se for o primeiro acesso, obriga a criar o perfil
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Bem-vindo! Por favor, complete seu perfil para continuar.',
-            ),
-            backgroundColor: Colors.blue,
+          MaterialPageRoute(
+            builder: (context) => EstudioFormView(donoId: user!.id),
           ),
         );
-        Navigator.pushReplacement(
+      } else {
+        await Provider.of<ProfileViewModel>(
           context,
-          MaterialPageRoute(builder: (context) => const ProfilePage()),
-        );
+          listen: false,
+        ).carregarPerfil();
+        final temPerfil = await authViewModel.verificarPerfilExistente();
+
+        if (!mounted) return;
+
+        if (temPerfil) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Bem-vindo! Por favor, complete seu perfil para continuar.',
+              ),
+              backgroundColor: Colors.blue,
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfilePage()),
+          );
+        }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

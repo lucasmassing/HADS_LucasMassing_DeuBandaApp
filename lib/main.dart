@@ -8,6 +8,7 @@ import 'views/login_page.dart';
 import 'viewmodels/profile_viewmodel.dart';
 import 'viewmodels/projeto_viewmodel.dart';
 import 'viewmodels/matching_viewmodel.dart';
+import 'viewmodels/estudio_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProjetoViewModel()),
         ChangeNotifierProvider(create: (_) => MatchingViewModel()),
         ChangeNotifierProvider(create: (_) => NotificacaoViewModel()),
+        ChangeNotifierProvider(create: (_) => EstudioViewModel()),
       ],
       child: const DeuBandaApp(),
     ),

@@ -34,11 +34,11 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  // Retorna true se o cadastro for bem-sucedido
   Future<bool> realizarCadastro(
     String name,
     String email,
     String password,
+    String tipoPerfil,
   ) async {
     _setLoading(true);
     _errorMessage = null;
@@ -47,7 +47,10 @@ class AuthViewModel extends ChangeNotifier {
       await _supabase.auth.signUp(
         email: email,
         password: password,
-        data: {'full_name': name},
+        data: {
+          'full_name': name,
+          'tipo_perfil': tipoPerfil,
+        },
       );
       return true;
     } on AuthException catch (e) {

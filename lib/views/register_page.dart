@@ -16,6 +16,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
 
   bool _aceitouTermosLGPD = false;
+  String _tipoPerfilSelecionado = 'Músico';
 
   String? _validarSenha(String? value) {
     if (value == null || value.isEmpty) {
@@ -46,13 +47,13 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Acessa o ViewModel
     final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
 
     final sucesso = await authViewModel.realizarCadastro(
       _nameController.text.trim(),
       _emailController.text.trim(),
       _passwordController.text.trim(),
+      _tipoPerfilSelecionado,
     );
 
     if (!mounted) return;
@@ -66,7 +67,7 @@ class _RegisterPageState extends State<RegisterPage> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context); // Volta para a tela de login
+      Navigator.pop(context);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -79,7 +80,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Observa o estado de carregamento do ViewModel
     final isLoading = context.watch<AuthViewModel>().isLoading;
 
     return Scaffold(
@@ -153,6 +153,34 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         validator: _validarSenha,
                       ),
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        value: _tipoPerfilSelecionado,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de Conta',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.account_box),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Músico',
+                            child: Text('Sou Músico (Buscar Bandas/Estúdios)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Dono de Estúdio',
+                            child: Text('Sou Dono de Estúdio (Alugar Salas)'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _tipoPerfilSelecionado = newValue;
+                            });
+                          }
+                        },
+                      ),
+
                       const SizedBox(height: 16),
                       CheckboxListTile(
                         value: _aceitouTermosLGPD,
