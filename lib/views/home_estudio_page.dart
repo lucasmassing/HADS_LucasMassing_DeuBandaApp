@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'estudio_form_page.dart';
+import 'estudio_salas_page.dart';
 
 class HomeEstudioPage extends StatefulWidget {
   const HomeEstudioPage({super.key});
@@ -52,21 +53,6 @@ class _HomeEstudioPageState extends State<HomeEstudioPage> {
             label: 'Meu Estúdio',
           ),
         ],
-      ),
-    );
-  }
-}
-
-class SalasView extends StatelessWidget {
-  const SalasView({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Minhas Salas')),
-      body: const Center(child: Text('Lista de Salas e Botão Adicionar')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        child: const Icon(Icons.add),
       ),
     );
   }
