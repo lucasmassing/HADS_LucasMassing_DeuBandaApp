@@ -140,14 +140,6 @@ class _FeedPageState extends State<FeedPage> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              viewModel.carregarFeed();
-              context.read<NotificacaoViewModel>().carregarNotificacoes();
-              viewModel.carregarMinhasConexoes();
-            },
-          ),
         ],
       ),
       body: viewModel.isLoading

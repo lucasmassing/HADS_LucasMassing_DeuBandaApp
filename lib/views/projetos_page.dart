@@ -312,14 +312,6 @@ class _ProjetosPageState extends State<ProjetosPage> {
                 );
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                viewModel.carregarProjetos();
-                viewModel.carregarMinhasInscricoes();
-                context.read<NotificacaoViewModel>().carregarNotificacoes();
-              },
-            ),
           ],
           bottom: const TabBar(
             tabs: [
