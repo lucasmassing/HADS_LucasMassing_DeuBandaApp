@@ -1,3 +1,4 @@
+import 'package:deubanda_app/viewmodels/estudio_viewmodel.dart';
 import 'package:deubanda_app/viewmodels/profile_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'profile_page.dart';
 import 'home_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'estudio_form_page.dart';
+import 'home_estudio_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -37,12 +39,38 @@ class _LoginPageState extends State<LoginPage> {
       final tipoPerfil = user?.userMetadata?['tipo_perfil'] ?? 'Músico';
 
       if (tipoPerfil == 'Dono de Estúdio') {
-        Navigator.pushReplacement(
+        final estudioViewModel = Provider.of<EstudioViewModel>(
           context,
-          MaterialPageRoute(
-            builder: (context) => EstudioFormView(donoId: user!.id),
-          ),
+          listen: false,
         );
+        await estudioViewModel.carregarPainelEstudio(user!.id);
+
+        if (!mounted) return;
+
+        // Verifica se o estúdio já existe no banco
+        if (estudioViewModel.meuEstudio != null) {
+          // Já tem cadastro, vai direto para a Home
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeEstudioPage()),
+          );
+        } else {
+          // Primeiro acesso, precisa preencher o formulário
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Bem-vindo! Cadastre os dados do seu estúdio para continuar.',
+              ),
+              backgroundColor: Colors.blue,
+            ),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EstudioFormView(donoId: user.id),
+            ),
+          );
+        }
       } else {
         await Provider.of<ProfileViewModel>(
           context,
