@@ -68,9 +68,18 @@ class _MinhasConexoesPageState extends State<MinhasConexoesPage> {
                 ),
               );
             },
-            leading: const CircleAvatar(
-              backgroundColor: Colors.deepPurple,
-              child: Icon(Icons.person, color: Colors.white),
+            leading: CircleAvatar(
+              backgroundColor: Colors.deepPurple.shade50,
+              backgroundImage:
+                  (outroPerfil['foto_perfil'] != null &&
+                      outroPerfil['foto_perfil'].toString().isNotEmpty)
+                  ? NetworkImage(outroPerfil['foto_perfil'])
+                  : null,
+              child:
+                  (outroPerfil['foto_perfil'] == null ||
+                      outroPerfil['foto_perfil'].toString().isEmpty)
+                  ? const Icon(Icons.person, color: Colors.grey)
+                  : null,
             ),
             title: Text(
               outroPerfil['perfil_nome'] ?? 'Músico',
