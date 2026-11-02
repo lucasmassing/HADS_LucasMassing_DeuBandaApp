@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'estudio_form_page.dart';
 import 'estudio_salas_page.dart';
+import 'estudio_reserva_page.dart';
 
 class HomeEstudioPage extends StatefulWidget {
   const HomeEstudioPage({super.key});
@@ -54,17 +55,6 @@ class _HomeEstudioPageState extends State<HomeEstudioPage> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class ReservasView extends StatelessWidget {
-  const ReservasView({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Gestão de Reservas')),
-      body: const Center(child: Text('Painel de Aprovação de Reservas')),
     );
   }
 }

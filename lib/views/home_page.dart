@@ -1,3 +1,4 @@
+import 'package:deubanda_app/views/busca_estudios_page.dart';
 import 'package:flutter/material.dart';
 import 'projetos_page.dart';
 import 'profile_page.dart';
@@ -17,6 +18,7 @@ class _HomePageState extends State<HomePage> {
     FeedPage(),
     ProjetosPage(),
     ProfilePage(),
+    BuscaEstudiosPage(),
   ];
 
   @override
@@ -35,6 +37,7 @@ class _HomePageState extends State<HomePage> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.explore), label: 'Explorar'),
           BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Vagas'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Estúdios'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),
