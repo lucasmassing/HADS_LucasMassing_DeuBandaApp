@@ -6,6 +6,9 @@ class ReservaModel {
   final String horarioInicio;
   final String horarioFim;
   final String status;
+  final int? quantidadePessoas;
+  final String? equipamentos;
+  final String? mensagem;
   final DateTime? createdAt;
 
   ReservaModel({
@@ -16,18 +19,26 @@ class ReservaModel {
     required this.horarioInicio,
     required this.horarioFim,
     this.status = 'PENDENTE',
+    this.quantidadePessoas,
+    this.equipamentos,
+    this.mensagem,
     this.createdAt,
   });
 
   factory ReservaModel.fromJson(Map<String, dynamic> json) {
     return ReservaModel(
-      id: json['reserva_id'] as String,
+      id:
+          json['reserva_id'] ??
+          json['id'] as String,
       salaId: json['sala_id'] as String,
       musicoId: json['musico_id'] as String,
       dataReserva: DateTime.parse(json['data_reserva']),
       horarioInicio: json['horario_inicio'] as String,
       horarioFim: json['horario_fim'] as String,
       status: json['status'] as String? ?? 'PENDENTE',
+      quantidadePessoas: json['quantidade_pessoas'] as int?,
+      equipamentos: json['equipamentos'] as String?,
+      mensagem: json['mensagem'] as String?,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
@@ -43,6 +54,9 @@ class ReservaModel {
       'horario_inicio': horarioInicio,
       'horario_fim': horarioFim,
       'status': status,
+      if (quantidadePessoas != null) 'quantidade_pessoas': quantidadePessoas,
+      if (equipamentos != null) 'equipamentos': equipamentos,
+      if (mensagem != null) 'mensagem': mensagem,
     };
   }
 }

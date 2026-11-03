@@ -1,3 +1,4 @@
+import 'package:deubanda_app/views/minhas_reservas_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -312,6 +313,16 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
         title: const Text('Buscar Estúdios'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.receipt_long),
+            tooltip: 'Minhas Reservas',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MinhasReservasPage()),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
