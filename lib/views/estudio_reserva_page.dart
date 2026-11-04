@@ -1,7 +1,9 @@
 import 'package:deubanda_app/models/reserva_model.dart';
+import 'package:deubanda_app/viewmodels/notificacao_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/estudio_viewmodel.dart';
+import 'package:deubanda_app/views/notificacoes_page.dart';
 
 class ReservasView extends StatefulWidget {
   const ReservasView({super.key});
@@ -18,6 +20,7 @@ class _ReservasViewState extends State<ReservasView> {
       final viewModel = context.read<EstudioViewModel>();
       if (viewModel.meuEstudio != null) {
         viewModel.carregarReservas(viewModel.meuEstudio!.id);
+        context.read<NotificacaoViewModel>().carregarNotificacoes();
       }
     });
   }
@@ -93,6 +96,32 @@ class _ReservasViewState extends State<ReservasView> {
         title: const Text('Gestão de Reservas'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          Consumer<NotificacaoViewModel>(
+            builder: (context, notifViewModel, child) {
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: notifViewModel.notificacoesNaoLidas > 0,
+                  label: Text(notifViewModel.notificacoesNaoLidas.toString()),
+                  child: const Icon(Icons.notifications),
+                ),
+                tooltip: 'Notificações',
+                onPressed: () async {
+                  await notifViewModel.carregarNotificacoes();
+
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificacoesPage(),
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: viewModel.isLoading
           ? const Center(child: CircularProgressIndicator())

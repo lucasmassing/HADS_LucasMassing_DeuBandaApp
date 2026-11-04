@@ -135,11 +135,17 @@ class EstudioViewModel extends ChangeNotifier {
           .maybeSingle();
 
       if (reservaData != null && reservaData['musico_id'] != null) {
+        final musicoId = reservaData['musico_id'];
+        final mensagem = novoStatus == 'ACEITO'
+            ? 'Sua reserva no estúdio ${meuEstudio!.nome} foi APROVADA!'
+            : 'Sua reserva no estúdio ${meuEstudio!.nome} foi RECUSADA.';
+
+        final telefone = novoStatus == 'ACEITO' ? meuEstudio!.telefone : null;
+
         await _supabase.from('notificacoes').insert({
-          'usuario_id': reservaData['musico_id'],
-          'titulo': 'Atualização de Reserva',
-          'mensagem':
-              'A sua solicitação de reserva no estúdio foi $novoStatus.',
+          'perfil_id': musicoId,
+          'mensagem': mensagem,
+          'telefone_contato': telefone,
         });
       }
 

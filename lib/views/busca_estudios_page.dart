@@ -1,6 +1,8 @@
 import 'package:deubanda_app/views/minhas_reservas_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/notificacao_viewmodel.dart';
 
 class BuscaEstudiosPage extends StatefulWidget {
   const BuscaEstudiosPage({super.key});
@@ -18,6 +20,9 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
   void initState() {
     super.initState();
     _carregarEstudiosESalas();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificacaoViewModel>().carregarNotificacoes();
+    });
   }
 
   Future<void> _carregarEstudiosESalas() async {
@@ -45,6 +50,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
   Future<void> _mostrarDialogReserva(
     BuildContext context,
     Map<String, dynamic> sala,
+    String donoId,
   ) async {
     final formKey = GlobalKey<FormState>();
     DateTime? dataSelecionada;
@@ -210,6 +216,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
                       await _processarReserva(
                         context: context,
                         salaId: sala['sala_id'],
+                        donoId: donoId,
                         data: dataSelecionada!,
                         inicio: horaInicio!,
                         fim: horaFim!,
@@ -232,6 +239,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
   Future<void> _processarReserva({
     required BuildContext context,
     required String salaId,
+    required String donoId,
     required DateTime data,
     required TimeOfDay inicio,
     required TimeOfDay fim,
@@ -285,8 +293,25 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
         'status': 'PENDENTE',
       });
 
+      await _supabase.from('notificacoes').insert({
+        'perfil_id': musicoId,
+        'mensagem':
+            'Sua solicitação de reserva para o dia $dataString foi enviada e está pendente.',
+      });
+
+      await _supabase.from('notificacoes').insert({
+        'perfil_id': donoId,
+        'mensagem': 'Você tem uma nova solicitação de reserva pendente!',
+      });
+
       if (context.mounted) {
-        Navigator.pop(context); // Fecha o dialog
+        Provider.of<NotificacaoViewModel>(
+          context,
+          listen: false,
+        ).carregarNotificacoes();
+
+        Navigator.pop(context);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Solicitação enviada com sucesso!'),
@@ -314,13 +339,27 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'Minhas Reservas',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MinhasReservasPage()),
-            ),
+          Consumer<NotificacaoViewModel>(
+            builder: (context, notifViewModel, child) {
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: notifViewModel.notificacoesNaoLidas > 0,
+                  label: Text(notifViewModel.notificacoesNaoLidas.toString()),
+                  child: const Icon(Icons.receipt_long),
+                ),
+                tooltip: 'Minhas Reservas',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MinhasReservasPage(),
+                    ),
+                  ).then((_) {
+                    notifViewModel.carregarNotificacoes();
+                  });
+                },
+              );
+            },
           ),
         ],
       ),
@@ -364,8 +403,11 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
                                   'Capacidade: ${sala['capacidade']} | R\$ ${sala['preco_hora']}/h',
                                 ),
                                 trailing: ElevatedButton(
-                                  onPressed: () =>
-                                      _mostrarDialogReserva(context, sala),
+                                  onPressed: () => _mostrarDialogReserva(
+                                    context,
+                                    sala,
+                                    estudio['dono_id'],
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.deepPurple,
                                   ),
