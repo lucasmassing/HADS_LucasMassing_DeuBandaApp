@@ -46,6 +46,70 @@ class _MinhasReservasPageState extends State<MinhasReservasPage> {
     }
   }
 
+  Future<void> _cancelarReserva(Map<String, dynamic> res) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar Reserva'),
+        content: const Text(
+          'Tem certeza que deseja cancelar esta solicitação?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Não'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Sim, cancelar',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    try {
+      await _supabase
+          .from('reservas')
+          .update({'status': 'CANCELADO'})
+          .eq('reserva_id', res['reserva_id']);
+
+      final donoId = res['salas']?['estudios']?['dono_id'];
+      final nomeSala = res['salas']?['nome_sala'] ?? 'uma sala';
+
+      if (donoId != null) {
+        await _supabase.from('notificacoes').insert({
+          'perfil_id': donoId,
+          'mensagem':
+              'Uma solicitação de reserva para $nomeSala na data ${res['data_reserva']} foi cancelada pelo músico.',
+        });
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Reserva cancelada com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _carregarMinhasReservas();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao cancelar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Color _getStatusColor(String status) {
     if (status == 'ACEITO') return Colors.green;
     if (status == 'RECUSADO' || status == 'CANCELADO') return Colors.red;
@@ -101,12 +165,23 @@ class _MinhasReservasPageState extends State<MinhasReservasPage> {
               'Data: ${res['data_reserva']}\nHorário: ${res['horario_inicio']} às ${res['horario_fim']}',
             ),
             isThreeLine: true,
-            trailing: Chip(
-              label: Text(
-                res['status'],
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-              ),
-              backgroundColor: _getStatusColor(res['status']),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Chip(
+                  label: Text(
+                    res['status'],
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                  backgroundColor: _getStatusColor(res['status']),
+                ),
+                if (res['status'] == 'PENDENTE')
+                  IconButton(
+                    icon: const Icon(Icons.cancel, color: Colors.red),
+                    tooltip: 'Cancelar solicitação',
+                    onPressed: () => _cancelarReserva(res),
+                  ),
+              ],
             ),
           ),
         );
