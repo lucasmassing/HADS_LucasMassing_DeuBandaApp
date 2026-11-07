@@ -113,7 +113,7 @@ class EstudioViewModel extends ChangeNotifier {
 
     final reservasData = await _supabase
         .from('reservas')
-        .select()
+        .select('*, perfis_musicos(perfil_nome, perfil_telefone)')
         .inFilter('sala_id', salasIds)
         .order('data_reserva', ascending: true);
 

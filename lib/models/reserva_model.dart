@@ -10,6 +10,8 @@ class ReservaModel {
   final String? equipamentos;
   final String? mensagem;
   final DateTime? createdAt;
+  final String? nomeMusico;
+  final String? telefoneMusico;
 
   ReservaModel({
     required this.id,
@@ -23,13 +25,14 @@ class ReservaModel {
     this.equipamentos,
     this.mensagem,
     this.createdAt,
+    this.nomeMusico,
+    this.telefoneMusico,
   });
 
   factory ReservaModel.fromJson(Map<String, dynamic> json) {
+    final musico = json['perfis_musicos'];
     return ReservaModel(
-      id:
-          json['reserva_id'] ??
-          json['id'] as String,
+      id: json['reserva_id'] ?? json['id'] as String,
       salaId: json['sala_id'] as String,
       musicoId: json['musico_id'] as String,
       dataReserva: DateTime.parse(json['data_reserva']),
@@ -42,6 +45,12 @@ class ReservaModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
+      nomeMusico: musico != null
+          ? musico['perfil_nome']
+          : 'Músico não identificado',
+      telefoneMusico: musico != null
+          ? musico['perfil_telefone']
+          : 'Não informado',
     );
   }
 

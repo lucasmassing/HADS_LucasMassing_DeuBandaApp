@@ -135,7 +135,7 @@ class _ReservasViewState extends State<ReservasView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Reserva #${reserva.id.substring(0, 6)}...',
+                          reserva.nomeMusico ?? 'Músico Desconhecido',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -157,6 +157,17 @@ class _ReservasViewState extends State<ReservasView> {
                     Text('Data: $dataFormatada'),
                     Text(
                       'Horário: ${reserva.horarioInicio} - ${reserva.horarioFim}',
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone, size: 14, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          reserva.telefoneMusico ?? 'Não informado',
+                          style: const TextStyle(color: Colors.black87),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
 
