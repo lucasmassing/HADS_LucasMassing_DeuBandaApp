@@ -61,10 +61,16 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
     String? equipamentosSelecionados;
 
     final opcoesEquipamentos = [
-      'Nenhum (Voz/Violão)',
-      'Kit Básico (Bateria + 2 Amps)',
-      'Kit Completo (Bateria, Amps, PAs e Microfones)',
-      'Gravação (Microfones Condensadores + Interface)',
+      'Nenhum (Levo meu próprio equipamento)',
+      'Voz e Acústico (PA, 2 microfones, pedestais e cabos)',
+      'Banda Básica (Bateria s/ pratos, 2 Amps, PA, 3 Mics)',
+      'Banda Completa (Bateria c/ pratos, 2 Amps, PA, Mics)',
+      'Teclas/Sintetizadores (PA, Suportes em X, Cabos P10)',
+      'Gravação de Voz/Mixagem (Condensador, Fones, Interface)',
+      'Gravação de Banda (Microfonação completa de bateria/amps)',
+      'DJ / Eletrônica (Monitores de referência, espaço/mesa)',
+      'Podcast / Mesacast (Mesa de som, Mics de locução, Fones)',
+      'Outro (Especificarei na mensagem abaixo)',
     ];
 
     await showDialog(
@@ -168,6 +174,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
 
                       // Equipamentos (Lista Suspensa)
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Equipamentos Necessários',
                         ),
@@ -303,7 +310,8 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
 
       await _supabase.from('notificacoes').insert({
         'perfil_id': donoId,
-        'mensagem': 'Você tem uma nova solicitação de reserva pendente para a $salaNome!',
+        'mensagem':
+            'Você tem uma nova solicitação de reserva pendente para a $salaNome!',
       });
 
       if (context.mounted) {
