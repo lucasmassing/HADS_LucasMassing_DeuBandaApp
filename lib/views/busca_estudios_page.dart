@@ -216,6 +216,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
                       await _processarReserva(
                         context: context,
                         salaId: sala['sala_id'],
+                        salaNome: sala['nome_sala'] ?? 'Sala',
                         donoId: donoId,
                         data: dataSelecionada!,
                         inicio: horaInicio!,
@@ -239,6 +240,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
   Future<void> _processarReserva({
     required BuildContext context,
     required String salaId,
+    required String salaNome,
     required String donoId,
     required DateTime data,
     required TimeOfDay inicio,
@@ -301,7 +303,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
 
       await _supabase.from('notificacoes').insert({
         'perfil_id': donoId,
-        'mensagem': 'Você tem uma nova solicitação de reserva pendente!',
+        'mensagem': 'Você tem uma nova solicitação de reserva pendente para a $salaNome!',
       });
 
       if (context.mounted) {
