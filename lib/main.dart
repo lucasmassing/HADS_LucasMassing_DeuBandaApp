@@ -9,9 +9,11 @@ import 'viewmodels/profile_viewmodel.dart';
 import 'viewmodels/projeto_viewmodel.dart';
 import 'viewmodels/matching_viewmodel.dart';
 import 'viewmodels/estudio_viewmodel.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('pt_BR', null);
   await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
