@@ -127,7 +127,7 @@ class ProjetoViewModel extends ChangeNotifier {
     try {
       final data = await _supabase
           .from('projetos')
-          .select()
+          .select('*, perfis_musicos(perfil_nome)')
           .eq('projeto_status', 'ATIVO')
           .order('projeto_data', ascending: false);
 

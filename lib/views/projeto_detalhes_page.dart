@@ -28,6 +28,16 @@ class ProjetoDetalhesPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.person, color: Colors.deepPurple),
+              title: const Text('Criado por'),
+              subtitle: Text(
+                projeto.nomeCriador ?? 'Músico não identificado',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+
             if (projeto.projetoFuncaoDesejada != null &&
                 projeto.projetoFuncaoDesejada!.isNotEmpty)
               ListTile(

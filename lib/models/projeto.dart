@@ -6,6 +6,7 @@ class Projeto {
   final String? projetoFuncaoDesejada;
   final String? projetoLocalizacao;
   final String projetoStatus;
+  final String? nomeCriador;
 
   Projeto({
     this.projetoId,
@@ -15,6 +16,7 @@ class Projeto {
     this.projetoFuncaoDesejada,
     this.projetoLocalizacao,
     this.projetoStatus = 'ATIVO',
+    this.nomeCriador,
   });
 
   factory Projeto.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class Projeto {
       projetoFuncaoDesejada: json['projeto_funcao_desejada'],
       projetoLocalizacao: json['projeto_localizacao'],
       projetoStatus: json['projeto_status'],
+      nomeCriador: json['perfis_musicos']?['perfil_nome'],
     );
   }
 
