@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:deubanda_app/views/home_estudio_page.dart';
 import 'package:deubanda_app/views/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -199,6 +200,11 @@ class _EstudioFormViewState extends State<EstudioFormView> {
             duration: Duration(seconds: 1),
           ),
         );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeEstudioPage()),
+        );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -304,8 +310,7 @@ class _EstudioFormViewState extends State<EstudioFormView> {
                             ),
                             const SizedBox(width: 12),
                             SizedBox(
-                              height:
-                                  56,
+                              height: 56,
                               child: ElevatedButton.icon(
                                 onPressed: _buscandoCep ? null : _buscarCep,
                                 icon: _buscandoCep
