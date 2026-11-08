@@ -24,7 +24,17 @@ class _EstudioFormViewState extends State<EstudioFormView> {
   final _telefoneController = TextEditingController();
   final _cepController = TextEditingController();
   final _descricaoController = TextEditingController();
-  final _equipamentosController = TextEditingController();
+  final List<String> _opcoesEquipamentos = [
+    'Voz e Acústico (PA, 2 microfones, pedestais e cabos)',
+    'Banda Básica (Bateria s/ pratos, 2 Amps, PA, 3 Mics)',
+    'Banda Completa (Bateria c/ pratos, 2 Amps, PA, Mics)',
+    'Teclas/Sintetizadores (PA, Suportes em X, Cabos P10)',
+    'Gravação de Voz/Mixagem (Condensador, Fones, Interface)',
+    'Gravação de Banda (Microfonação completa de bateria/amps)',
+    'DJ / Eletrônica (Monitores de referência, espaço/mesa)',
+    'Podcast / Mesacast (Mesa de som, Mics de locução, Fones)',
+  ];
+  List<String> _equipamentosSelecionados = [];
   final _ruaController = TextEditingController();
   final _numeroController = TextEditingController();
   final _bairroController = TextEditingController();
@@ -51,7 +61,13 @@ class _EstudioFormViewState extends State<EstudioFormView> {
       _nomeController.text = viewModel.meuEstudio!.nome;
       _telefoneController.text = viewModel.meuEstudio!.telefone;
       _descricaoController.text = viewModel.meuEstudio!.descricao ?? '';
-      _equipamentosController.text = viewModel.meuEstudio!.equipamentos ?? '';
+      final equipSalvos = viewModel.meuEstudio!.equipamentos ?? '';
+      if (equipSalvos.isNotEmpty) {
+        _equipamentosSelecionados = equipSalvos
+            .split('|')
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
 
       final enderecoSalvo = viewModel.meuEstudio!.endereco;
 
@@ -90,7 +106,6 @@ class _EstudioFormViewState extends State<EstudioFormView> {
     _telefoneController.dispose();
     _cepController.dispose();
     _descricaoController.dispose();
-    _equipamentosController.dispose();
     _ruaController.dispose();
     _numeroController.dispose();
     _bairroController.dispose();
@@ -171,7 +186,7 @@ class _EstudioFormViewState extends State<EstudioFormView> {
         telefone: _telefoneController.text,
         endereco: enderecoCompleto,
         descricao: _descricaoController.text,
-        equipamentos: _equipamentosController.text,
+        equipamentos: _equipamentosSelecionados.join('|'),
       );
 
       final sucesso = await viewModel.salvarEstudio(novoEstudio);
@@ -345,12 +360,48 @@ class _EstudioFormViewState extends State<EstudioFormView> {
                       maxLines: 3,
                     ),
                     const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _equipamentosController,
-                      decoration: const InputDecoration(
-                        labelText: 'Equipamentos (Amps, Bateria, PA)',
+                    const SizedBox(height: 12),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Equipamentos Oferecidos:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 4.0,
+                      children: _opcoesEquipamentos.map((equipamento) {
+                        final isSelected = _equipamentosSelecionados.contains(
+                          equipamento,
+                        );
+                        return FilterChip(
+                          label: Text(
+                            equipamento
+                                .split(' (')
+                                .first,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: Colors.deepPurple,
+                          checkmarkColor: Colors.white,
+                          onSelected: (bool selected) {
+                            setState(() {
+                              if (selected) {
+                                _equipamentosSelecionados.add(equipamento);
+                              } else {
+                                _equipamentosSelecionados.remove(equipamento);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 32),
 

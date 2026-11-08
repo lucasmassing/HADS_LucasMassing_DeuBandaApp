@@ -47,11 +47,12 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
     }
   }
 
-  Future<void> _mostrarDialogReserva(
+  void _mostrarDialogReserva(
     BuildContext context,
     Map<String, dynamic> sala,
     String donoId,
-  ) async {
+    String equipamentosDoEstudio,
+  ) {
     final formKey = GlobalKey<FormState>();
     DateTime? dataSelecionada;
     TimeOfDay? horaInicio;
@@ -60,20 +61,14 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
     final mensagemController = TextEditingController();
     String? equipamentosSelecionados;
 
-    final opcoesEquipamentos = [
-      'Nenhum (Levo meu próprio equipamento)',
-      'Voz e Acústico (PA, 2 microfones, pedestais e cabos)',
-      'Banda Básica (Bateria s/ pratos, 2 Amps, PA, 3 Mics)',
-      'Banda Completa (Bateria c/ pratos, 2 Amps, PA, Mics)',
-      'Teclas/Sintetizadores (PA, Suportes em X, Cabos P10)',
-      'Gravação de Voz/Mixagem (Condensador, Fones, Interface)',
-      'Gravação de Banda (Microfonação completa de bateria/amps)',
-      'DJ / Eletrônica (Monitores de referência, espaço/mesa)',
-      'Podcast / Mesacast (Mesa de som, Mics de locução, Fones)',
-      'Outro (Especificarei na mensagem abaixo)',
-    ];
+    List<String> opcoesEquipamentos = equipamentosDoEstudio.isNotEmpty
+        ? equipamentosDoEstudio.split('|').where((e) => e.isNotEmpty).toList()
+        : [];
 
-    await showDialog(
+    opcoesEquipamentos.insert(0, 'Nenhum (Levo meu próprio equipamento)');
+    opcoesEquipamentos.add('Outro (Especificarei na mensagem abaixo)');
+
+    showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
@@ -394,7 +389,8 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
                         color: Colors.deepPurple,
                       ),
                       title: Text(
-                        estudio['nome_estudio'] ?? 'Estúdio sem nome',
+                        estudio['nome'] ??
+                            'Estúdio sem nome',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Column(
@@ -439,7 +435,9 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
                           : salas.map((sala) {
                               return ListTile(
                                 leading: const Icon(Icons.meeting_room),
-                                title: Text(sala['nome_sala']),
+                                title: Text(
+                                  sala['nome_sala'] ?? 'Sala sem nome',
+                                ),
                                 subtitle: Text(
                                   'Capacidade: ${sala['capacidade']} | R\$ ${sala['preco_hora']}/h',
                                 ),
@@ -448,6 +446,7 @@ class _BuscaEstudiosPageState extends State<BuscaEstudiosPage> {
                                     context,
                                     sala,
                                     estudio['dono_id'],
+                                    estudio['equipamentos'] ?? '',
                                   ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.deepPurple,
