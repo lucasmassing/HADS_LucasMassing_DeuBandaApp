@@ -196,6 +196,7 @@ class _EstudioFormViewState extends State<EstudioFormView> {
           const SnackBar(
             content: Text('Estúdio salvo com sucesso!'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
           ),
         );
       } else if (mounted) {
@@ -227,200 +228,280 @@ class _EstudioFormViewState extends State<EstudioFormView> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _nomeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome do Estúdio *',
-                      ),
-                      validator: (val) => val == null || val.isEmpty
-                          ? 'Campo obrigatório'
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _telefoneController,
-                      inputFormatters: [_telefoneFormatter],
-                      decoration: const InputDecoration(
-                        labelText: 'Telefone Comercial *',
-                        hintText: '(00) 00000-0000',
-                      ),
-                      keyboardType: TextInputType.phone,
-                      validator: (val) => val == null || val.isEmpty
-                          ? 'Campo obrigatório'
-                          : null,
-                    ),
-                    const SizedBox(height: 24),
-
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+              padding: const EdgeInsets.all(24.0),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextFormField(
-                            controller: _cepController,
-                            inputFormatters: [_cepFormatter],
-                            decoration: const InputDecoration(labelText: 'CEP'),
-                            keyboardType: TextInputType.number,
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Informações Básicas',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: _buscandoCep ? null : _buscarCep,
-                          child: _buscandoCep
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _nomeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nome do Estúdio *',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.store),
+                          ),
+                          validator: (val) => val == null || val.isEmpty
+                              ? 'Campo obrigatório'
+                              : null,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _telefoneController,
+                          inputFormatters: [_telefoneFormatter],
+                          decoration: const InputDecoration(
+                            labelText: 'Telefone Comercial *',
+                            hintText: '(00) 00000-0000',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.phone),
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (val) => val == null || val.isEmpty
+                              ? 'Campo obrigatório'
+                              : null,
+                        ),
+
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: Divider(thickness: 2),
+                        ),
+
+                        const Text(
+                          'Localização',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _cepController,
+                                inputFormatters: [_cepFormatter],
+                                decoration: const InputDecoration(
+                                  labelText: 'CEP',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.map),
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            SizedBox(
+                              height:
+                                  56,
+                              child: ElevatedButton.icon(
+                                onPressed: _buscandoCep ? null : _buscarCep,
+                                icon: _buscandoCep
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.search),
+                                label: const Text('Buscar'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.deepPurple,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                )
-                              : const Text('Buscar'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: TextFormField(
-                            controller: _ruaController,
-                            decoration: const InputDecoration(labelText: 'Rua'),
-                            validator: (val) => val == null || val.isEmpty
-                                ? 'Obrigatório'
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 1,
-                          child: TextFormField(
-                            controller: _numeroController,
-                            decoration: const InputDecoration(labelText: 'Nº'),
-                            keyboardType: TextInputType.number,
-                            validator: (val) => val == null || val.isEmpty
-                                ? 'Obrigatório'
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextFormField(
-                            controller: _bairroController,
-                            decoration: const InputDecoration(
-                              labelText: 'Bairro',
+                                ),
+                              ),
                             ),
-                            validator: (val) => val == null || val.isEmpty
-                                ? 'Obrigatório'
-                                : null,
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 2,
-                          child: TextFormField(
-                            controller: _cidadeController,
-                            decoration: const InputDecoration(
-                              labelText: 'Cidade',
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: TextFormField(
+                                controller: _ruaController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Rua',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Obrigatório'
+                                    : null,
+                              ),
                             ),
-                            validator: (val) => val == null || val.isEmpty
-                                ? 'Obrigatório'
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 1,
-                          child: TextFormField(
-                            controller: _estadoController,
-                            decoration: const InputDecoration(labelText: 'UF'),
-                            validator: (val) => val == null || val.isEmpty
-                                ? 'Obrigatório'
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _descricaoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Descrição do Espaço',
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 12),
-                    const SizedBox(height: 12),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Equipamentos Oferecidos:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 4.0,
-                      children: _opcoesEquipamentos.map((equipamento) {
-                        final isSelected = _equipamentosSelecionados.contains(
-                          equipamento,
-                        );
-                        return FilterChip(
-                          label: Text(
-                            equipamento
-                                .split(' (')
-                                .first,
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 1,
+                              child: TextFormField(
+                                controller: _numeroController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Nº',
+                                  border: OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Obrigatório'
+                                    : null,
+                              ),
                             ),
-                          ),
-                          selected: isSelected,
-                          selectedColor: Colors.deepPurple,
-                          checkmarkColor: Colors.white,
-                          onSelected: (bool selected) {
-                            setState(() {
-                              if (selected) {
-                                _equipamentosSelecionados.add(equipamento);
-                              } else {
-                                _equipamentosSelecionados.remove(equipamento);
-                              }
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 32),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _bairroController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Bairro',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Obrigatório'
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _cidadeController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Cidade',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Obrigatório'
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 1,
+                              child: TextFormField(
+                                controller: _estadoController,
+                                decoration: const InputDecoration(
+                                  labelText: 'UF',
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (val) => val == null || val.isEmpty
+                                    ? 'Obrigatório'
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _salvarEstudio,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                          foregroundColor: Colors.white,
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: Divider(thickness: 2),
                         ),
-                        child: const Text(
-                          'Salvar Estúdio',
-                          style: TextStyle(fontSize: 16),
+
+                        const Text(
+                          'Detalhes e Estrutura',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _descricaoController,
+                          decoration: const InputDecoration(
+                            labelText: 'Descrição do Espaço',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.description),
+                          ),
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Equipamentos Oferecidos:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade400),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: _opcoesEquipamentos.map((equipamento) {
+                              final isSelected = _equipamentosSelecionados
+                                  .contains(equipamento);
+                              return CheckboxListTile(
+                                title: Text(equipamento),
+                                value: isSelected,
+                                activeColor: Colors.deepPurple,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                dense: true,
+                                onChanged: (bool? selected) {
+                                  setState(() {
+                                    if (selected == true) {
+                                      _equipamentosSelecionados.add(
+                                        equipamento,
+                                      );
+                                    } else {
+                                      _equipamentosSelecionados.remove(
+                                        equipamento,
+                                      );
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            onPressed: _salvarEstudio,
+                            icon: const Icon(Icons.save),
+                            label: const Text(
+                              'Salvar Estúdio',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
