@@ -21,6 +21,20 @@ class _EstudioFormViewState extends State<EstudioFormView> {
   final _equipamentosController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+
+    final viewModel = Provider.of<EstudioViewModel>(context, listen: false);
+    if (viewModel.meuEstudio != null) {
+      _nomeController.text = viewModel.meuEstudio!.nome;
+      _telefoneController.text = viewModel.meuEstudio!.telefone;
+      _enderecoController.text = viewModel.meuEstudio!.endereco;
+      _descricaoController.text = viewModel.meuEstudio!.descricao ?? '';
+      _equipamentosController.text = viewModel.meuEstudio!.equipamentos ?? '';
+    }
+  }
+
+  @override
   void dispose() {
     _nomeController.dispose();
     _telefoneController.dispose();
