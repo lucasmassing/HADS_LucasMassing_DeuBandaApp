@@ -156,6 +156,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(height: 16),
 
                       DropdownButtonFormField<String>(
+                        isExpanded:
+                            true,
                         value: _tipoPerfilSelecionado,
                         decoration: const InputDecoration(
                           labelText: 'Tipo de Conta',
@@ -165,11 +167,17 @@ class _RegisterPageState extends State<RegisterPage> {
                         items: const [
                           DropdownMenuItem(
                             value: 'Músico',
-                            child: Text('Sou Músico (Buscar Bandas/Estúdios)'),
+                            child: Text(
+                              'Sou Músico (Buscar Bandas/Estúdios)',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           DropdownMenuItem(
                             value: 'Dono de Estúdio',
-                            child: Text('Sou Dono de Estúdio (Alugar Salas)'),
+                            child: Text(
+                              'Sou Dono de Estúdio (Alugar Salas)',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                         onChanged: (String? newValue) {

@@ -149,6 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
+                    isExpanded: true, // PREVINE OVERFLOW NO MODAL
                     decoration: const InputDecoration(
                       labelText: 'Instrumento',
                       border: OutlineInputBorder(),
@@ -157,7 +158,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     items: viewModel.todosInstrumentos.map((inst) {
                       return DropdownMenuItem(
                         value: inst.instrumentoId,
-                        child: Text(inst.instrumentoNome),
+                        child: Text(
+                          inst.instrumentoNome,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) =>
@@ -165,6 +169,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
+                    isExpanded: true, // PREVINE OVERFLOW NO MODAL
                     decoration: const InputDecoration(
                       labelText: 'Nível de Proficiência',
                       border: OutlineInputBorder(),
@@ -250,6 +255,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<int>(
+                    isExpanded: true, // PREVINE OVERFLOW NO MODAL
                     decoration: const InputDecoration(
                       labelText: 'Gênero',
                       border: OutlineInputBorder(),
@@ -258,7 +264,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     items: viewModel.todosGeneros.map((g) {
                       return DropdownMenuItem<int>(
                         value: g['genero_id'],
-                        child: Text(g['genero_nome']),
+                        child: Text(
+                          g['genero_nome'],
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) =>
@@ -535,7 +544,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      // Campo de CEP
                       Autocomplete<String>(
                         initialValue: TextEditingValue(
                           text: viewModel.cidadeEstado ?? '',
@@ -558,7 +566,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               return TextFormField(
                                 controller: controller,
                                 focusNode: focusNode,
-                                decoration: InputDecoration(
+                                decoration: const InputDecoration(
                                   labelText: 'Cidade',
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.location_city),
@@ -643,7 +651,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Divider(thickness: 2),
                 ),
 
-                // --- SEÇÃO SEPARADA: ARTISTAS E REFERÊNCIAS ---
                 const Text(
                   'Artistas de Referência (Máx. 5)',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -657,7 +664,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   )
                 else
                   SizedBox(
-                    height: 110,
+                    height: 112,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: viewModel.artistasSelecionados.length,
@@ -690,12 +697,13 @@ class _ProfilePageState extends State<ProfilePage> {
                                     top: 0,
                                     right: 0,
                                     child: InkWell(
+                                      customBorder: const CircleBorder(),
                                       onTap: () {
                                         viewModel.removerArtista(name);
                                         _mostrarMensagemSalvo();
                                       },
                                       child: Container(
-                                        padding: const EdgeInsets.all(4),
+                                        padding: const EdgeInsets.all(6),
                                         decoration: const BoxDecoration(
                                           color: Colors.red,
                                           shape: BoxShape.circle,
@@ -728,14 +736,15 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
                 if (viewModel.artistasSelecionados.length < 5)
                   Autocomplete<Map<String, String>>(
                     displayStringForOption: (option) => option['name'] ?? '',
                     optionsBuilder: (TextEditingValue textEditingValue) async {
-                      if (textEditingValue.text.length < 3)
+                      if (textEditingValue.text.length < 3) {
                         return const Iterable<Map<String, String>>.empty();
+                      }
                       return await viewModel.buscarArtistasNoiTunes(
                         textEditingValue.text,
                       );
@@ -814,6 +823,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                   title: Text(
                                     name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -833,15 +844,16 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Divider(thickness: 2),
                 ),
 
-                // --- INSTRUMENTOS E GÊNEROS ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Meus Instrumentos',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    const Expanded(
+                      child: Text(
+                        'Meus Instrumentos',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -888,7 +900,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               final sucesso = await viewModel
                                   .removerInstrumento(item.instrumentoId);
                               if (sucesso && context.mounted) {
-                                _mostrarMensagemSalvo(); // Deixe apenas a chamada do método padrão
+                                _mostrarMensagemSalvo();
                               }
                             },
                           ),
@@ -904,11 +916,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Meus Gêneros Musicais',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    const Expanded(
+                      child: Text(
+                        'Meus Gêneros Musicais',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -982,7 +996,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   SizedBox(
                     width: double.infinity,
                     height: 50,
-                    child: ElevatedButton.icon(
+                    child: ElevatedButton(
                       onPressed: () {
                         if (_nomeController.text.trim().isEmpty ||
                             _bioController.text.trim().isEmpty ||
@@ -1014,20 +1028,31 @@ class _ProfilePageState extends State<ProfilePage> {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.rocket_launch),
-                      label: const Text(
-                        'Concluir e Explorar Músicos',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.rocket_launch),
+                          SizedBox(width: 8),
+                          Flexible(
+                            // PREVINE OVERFLOW
+                            child: Text(
+                              'Concluir e Explorar Músicos',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
