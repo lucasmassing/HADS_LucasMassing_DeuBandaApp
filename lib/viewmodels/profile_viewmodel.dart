@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import '../models/perfil_musico.dart';
 import '../models/instrumento.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileViewModel extends ChangeNotifier {

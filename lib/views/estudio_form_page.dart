@@ -3,7 +3,6 @@ import 'package:deubanda_app/views/home_estudio_page.dart';
 import 'package:deubanda_app/views/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../models/estudio_model.dart';

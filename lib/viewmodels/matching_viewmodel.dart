@@ -347,7 +347,7 @@ class MatchingViewModel extends ChangeNotifier {
           .eq('perfil_id', userId)
           .maybeSingle();
 
-      final meuPerfil = responsePerfil as Map<String, dynamic>?;
+      final meuPerfil = responsePerfil;
 
       final String meuNome =
           (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';
@@ -451,7 +451,7 @@ class MatchingViewModel extends ChangeNotifier {
             .eq('perfil_id', meuId)
             .maybeSingle();
 
-        final meuPerfil = responsePerfil as Map<String, dynamic>?;
+        final meuPerfil = responsePerfil;
 
         final String meuNome =
             (meuPerfil?['perfil_nome'] as String?) ?? 'Um músico';

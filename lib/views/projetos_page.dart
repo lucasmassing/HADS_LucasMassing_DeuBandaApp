@@ -1,4 +1,3 @@
-import 'package:deubanda_app/viewmodels/matching_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -245,7 +244,6 @@ class _ProjetosPageState extends State<ProjetosPage> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ProjetoViewModel>();
-    final matchViewModel = context.watch<MatchingViewModel>();
 
     // Extrai os IDs das vagas em que me inscrevi para não mostrar no mural
     final idsInscritos = viewModel.minhasInscricoes
