@@ -161,4 +161,17 @@ class EstudioViewModel extends ChangeNotifier {
     isLoading = value;
     notifyListeners();
   }
+
+  void limparDados() {
+    meuEstudio = null;
+    minhasSalas = [];
+    reservas = [];
+    errorMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> fazerLogout() async {
+    limparDados();
+    await _supabase.auth.signOut();
+  }
 }

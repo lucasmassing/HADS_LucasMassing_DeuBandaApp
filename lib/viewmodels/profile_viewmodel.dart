@@ -299,6 +299,11 @@ class ProfileViewModel extends ChangeNotifier {
     _errorMessage = null;
     _objetivosSelecionados = [];
     _artistasSelecionados = [];
+    _meusGeneros = [];
+    _horariosDisponiveis = [];
+    _telefone = null;
+    _fotoPerfil = null;
+    _fotosGaleria = [];
     notifyListeners();
   }
 

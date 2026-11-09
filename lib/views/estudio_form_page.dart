@@ -162,7 +162,9 @@ class _EstudioFormViewState extends State<EstudioFormView> {
     );
 
     if (confirmar == true) {
-      await Supabase.instance.client.auth.signOut();
+      final viewModel = Provider.of<EstudioViewModel>(context, listen: false);
+      await viewModel.fazerLogout();
+
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
