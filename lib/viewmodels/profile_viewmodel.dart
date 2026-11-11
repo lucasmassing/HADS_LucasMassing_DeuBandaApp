@@ -7,7 +7,7 @@ import '../models/instrumento.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
 
   PerfilMusico? _perfil;
   PerfilMusico? get perfil => _perfil;
@@ -67,7 +67,8 @@ class ProfileViewModel extends ChangeNotifier {
   List<String> _fotosGaleria = [];
   List<String> get fotosGaleria => _fotosGaleria;
 
-  ProfileViewModel() {
+  ProfileViewModel({SupabaseClient? client})
+    : _supabase = client ?? Supabase.instance.client {
     _inicializarDados();
   }
 

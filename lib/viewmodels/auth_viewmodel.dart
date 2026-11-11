@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  AuthViewModel({SupabaseClient? client})
+    : _supabase = client ?? Supabase.instance.client;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -47,10 +50,7 @@ class AuthViewModel extends ChangeNotifier {
       await _supabase.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'full_name': name,
-          'tipo_perfil': tipoPerfil,
-        },
+        data: {'full_name': name, 'tipo_perfil': tipoPerfil},
       );
       return true;
     } on AuthException catch (e) {

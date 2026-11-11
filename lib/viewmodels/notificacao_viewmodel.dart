@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificacaoViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
 
   List<Map<String, dynamic>> _notificacoes = [];
   List<Map<String, dynamic>> get notificacoes => _notificacoes;
@@ -10,7 +10,8 @@ class NotificacaoViewModel extends ChangeNotifier {
   int get notificacoesNaoLidas =>
       _notificacoes.where((n) => n['lida'] == false).length;
 
-  NotificacaoViewModel() {
+  NotificacaoViewModel({SupabaseClient? client})
+    : _supabase = client ?? Supabase.instance.client {
     carregarNotificacoes();
   }
 

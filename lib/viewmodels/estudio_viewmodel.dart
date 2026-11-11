@@ -5,7 +5,10 @@ import '../models/sala_model.dart';
 import '../models/reserva_model.dart';
 
 class EstudioViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  EstudioViewModel({SupabaseClient? client}) 
+      : _supabase = client ?? Supabase.instance.client;
 
   EstudioModel? meuEstudio;
   List<SalaModel> minhasSalas = [];

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MatchingViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
 
   List<Map<String, dynamic>> _musicosFeed = [];
   List<Map<String, dynamic>> get musicosFeed => _musicosFeed;
@@ -11,7 +11,8 @@ class MatchingViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  MatchingViewModel() {
+  MatchingViewModel({SupabaseClient? client})
+    : _supabase = client ?? Supabase.instance.client {
     carregarFeed();
   }
 

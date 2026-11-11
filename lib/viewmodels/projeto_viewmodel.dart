@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/instrumento.dart';
 
 class ProjetoViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
 
   List<Projeto> _projetosAtivos = [];
   List<Projeto> get projetosAtivos => _projetosAtivos;
@@ -17,7 +17,8 @@ class ProjetoViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  ProjetoViewModel() {
+  ProjetoViewModel({SupabaseClient? client})
+    : _supabase = client ?? Supabase.instance.client {
     carregarProjetos();
     carregarMinhasInscricoes();
     carregarCidadesIbge();
